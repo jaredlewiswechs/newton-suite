@@ -44,9 +44,10 @@ CONSTRAINTS = {
     "harm": {
         "name": "No Harm",
         "patterns": [
-            r"how to (make|build|create).*(bomb|weapon|explosive|poison)",
-            r"how to (kill|murder|harm|hurt|injure)",
-            r"how to (suicide|self.harm)",
+            r"(how to )?(make|build|create|construct).*\b(bomb|weapon|explosive|poison|grenade)\b",
+            r"(how to )?(kill|murder|harm|hurt|injure|assassinate)",
+            r"(how to )?(suicide|self.harm)",
+            r"\b(i want to|i need to|help me) (kill|murder|harm|hurt)",
         ]
     },
     "medical": {
@@ -60,16 +61,16 @@ CONSTRAINTS = {
     "legal": {
         "name": "Legal Bounds",
         "patterns": [
-            r"how to (evade|avoid|cheat).*(tax|irs)",
-            r"how to (launder|hide|offshore) money",
-            r"how to (forge|fake|counterfeit)",
+            r"(how to )?(evade|avoid|cheat).*(tax|irs)",
+            r"(how to )?(launder|hide|offshore) money",
+            r"(how to )?(forge|fake|counterfeit)",
         ]
     },
     "security": {
         "name": "Security",
         "patterns": [
-            r"how to (hack|crack|break into|exploit|bypass)",
-            r"(steal password|phishing|malware|ransomware)",
+            r"(how to )?(hack|crack|break into|exploit|bypass)",
+            r"\b(steal password|phishing|malware|ransomware)\b",
         ]
     }
 }
