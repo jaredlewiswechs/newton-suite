@@ -31,7 +31,11 @@ import re
 import statistics
 import json
 import os
+import sys
 from pathlib import Path
+
+# Fix module path for deployment environments
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Grounding Engine for claim verification
 from core.grounding import GroundingEngine
