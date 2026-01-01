@@ -2,9 +2,11 @@
 
 **The AI Safety Layer. Verify intent before execution.**
 
-[![Version](https://img.shields.io/badge/version-2.1.0-green.svg)](https://github.com/jaredlewiswechs/Newton-api)
+[![Version](https://img.shields.io/badge/version-3.0.0-green.svg)](https://github.com/jaredlewiswechs/Newton-api)
 [![License](https://img.shields.io/badge/license-Commercial-blue.svg)](#licensing)
 [![API](https://img.shields.io/badge/API-REST-orange.svg)](#api-reference)
+[![Auth](https://img.shields.io/badge/Auth-API%20Key-blue.svg)](#authentication)
+[![Frameworks](https://img.shields.io/badge/Frameworks-10%2B-purple.svg)](#framework-verification)
 
 ---
 
@@ -76,20 +78,73 @@ curl -X POST https://your-newton-api.com/compile \
 
 ## API Reference
 
+### Core Verification
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/verify` | POST | Verify text against constraints |
-| `/analyze` | POST | Anomaly detection on numerical data |
+| `/verify` | POST | Verify text against harm, medical, legal, and security constraints |
+| `/analyze` | POST | THIA anomaly detection (Z-score, IQR, MAD methods) |
 | `/analyze/batch` | POST | Batch analysis of multiple datasets |
-| `/compile` | POST | Compile intent to AI-ready specification |
-| `/health` | GET | System status and version |
-| `/constraints` | GET | List available constraints |
-| `/methods` | GET | List analysis methods |
-| `/frameworks` | GET | List supported frameworks (for /compile) |
+| `/compile` | POST | Rosetta compiler: natural language to AI-ready prompts |
+
+### Extension Cartridges
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/cartridge/visual` | POST | SVG generation with dimension constraints |
+| `/cartridge/sound` | POST | Audio specs with frequency/duration limits |
+| `/cartridge/sequence` | POST | Video/animation specs with frame constraints |
+| `/cartridge/data` | POST | Report generation with statistical bounds |
+
+### Security & Audit
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/sign` | POST | Generate cryptographic signatures for payloads |
+| `/ledger` | GET | Append-only audit trail with chain verification |
+| `/ledger/verify` | GET | Verify integrity of the cryptographic ledger chain |
+| `/frameworks/verify` | POST | Verify intent against Apple framework constraints |
+
+### Metadata
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | System status, version, and capabilities |
+| `/constraints` | GET | List available content constraints |
+| `/methods` | GET | List THIA analysis methods |
+| `/frameworks` | GET | List Apple frameworks by category |
+| `/frameworks/constraints` | GET | List framework-specific constraints |
 
 ### Authentication
 
-Enterprise plans include API key authentication. Contact sales for details.
+Newton v3.0 includes built-in API key authentication and rate limiting.
+
+```bash
+# With API key authentication enabled
+curl -X POST https://your-newton-api.com/verify \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{"input": "Help me write a business plan"}'
+```
+
+**Configuration:**
+```bash
+# Enable authentication (default: disabled for development)
+export NEWTON_AUTH_ENABLED=true
+
+# Set enterprise API key
+export NEWTON_ENTERPRISE_KEY=your-secret-key
+
+# Custom API keys (JSON format)
+export NEWTON_API_KEYS='{"key1": {"owner": "user1", "tier": "pro", "rate_limit": 1000}}'
+```
+
+**Rate Limits by Tier:**
+| Tier | Requests/Minute |
+|------|-----------------|
+| Free | 60 |
+| Pro | 1,000 |
+| Enterprise | 10,000 |
 
 ---
 
@@ -99,7 +154,7 @@ Enterprise plans include API key authentication. Contact sales for details.
 
 Sign up at [parcri.net](https://parcri.net) for instant API access. No deployment required.
 
-### Option 2: Self-Hosted
+### Option 2: Self-Hosted (Python)
 
 ```bash
 # Clone the repository
@@ -115,14 +170,34 @@ python newton_os_server.py
 
 Server runs at `http://localhost:8000`
 
-### Option 3: Docker
+### Option 3: Ruby Kernel + Universal Adapter
+
+For vendor-agnostic AI execution with the Z-score verification loop:
+
+```bash
+# Install Ruby dependencies
+bundle install
+
+# Deploy kernel to Render (or run locally)
+ruby newton_api.rb  # Runs on port 4567
+
+# Configure and run the adapter
+export NEWTON_HOST="https://your-newton-kernel.onrender.com"
+export VENDOR="claude"  # or groq, openai, local
+export NEWTON_KEY="your-api-key"
+ruby adapter_universal.rb
+```
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed setup instructions.
+
+### Option 4: Docker
 
 ```bash
 docker build -t newton-os .
 docker run -p 8000:8000 newton-os
 ```
 
-### Option 4: Deploy to Render
+### Option 5: Deploy to Render
 
 1. Fork this repository
 2. Connect to [Render.com](https://render.com)
@@ -160,17 +235,42 @@ Works with Claude, GPT, Llama, Mistral, or any AI. Newton doesn't care what mode
 
 ---
 
+## Extension Cartridges
+
+Newton's constraint engine extends to any domain with definable bounds:
+
+| Cartridge | Input | Constraints | Output |
+|-----------|-------|-------------|--------|
+| **Visual** | Design intent | Dimension/color bounds | SVG specification |
+| **Sound** | Audio intent | Frequency/duration limits | WAV specification |
+| **Sequence** | Animation intent | Frame/timing constraints | Video specification |
+| **Data** | Report intent | Statistical bounds | Report specification |
+
+```bash
+# Example: Generate a visual specification
+curl -X POST https://your-newton-api.com/cartridge/visual \
+  -H "Content-Type: application/json" \
+  -d '{"intent": "Create a dashboard with progress indicators", "width": 800, "height": 600}'
+```
+
+---
+
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         NEWTON OS                               │
+│                         NEWTON OS v3.0.0                        │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐ │
-│  │  VERIFY  │    │ ANALYZE  │    │ COMPILE  │    │  HEALTH  │ │
-│  │  Intent  │    │   THIA   │    │ Rosetta  │    │  Status  │ │
+│  │  VERIFY  │    │ ANALYZE  │    │ COMPILE  │    │   SIGN   │ │
+│  │  Intent  │    │   THIA   │    │ Rosetta  │    │  Crypto  │ │
 │  └──────────┘    └──────────┘    └──────────┘    └──────────┘ │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                  EXTENSION CARTRIDGES                    │   │
+│  │       visual | sound | sequence | data                   │   │
+│  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │                    CONSTRAINT ENGINE                     │   │
@@ -178,12 +278,79 @@ Works with Claude, GPT, Llama, Mistral, or any AI. Newton doesn't care what mode
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │                   FINGERPRINT LEDGER                     │   │
-│  │            SHA-256 | Timestamp | Audit Trail            │   │
+│  │              APPEND-ONLY CRYPTOGRAPHIC LEDGER            │   │
+│  │       SHA-256 | Chain Verification | Audit Trail        │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Framework Verification
+
+Newton v3.0 includes safety constraints for 10+ frameworks across Apple, Web, and ML ecosystems.
+
+### Supported Frameworks
+
+| Category | Frameworks |
+|----------|------------|
+| **Apple** | HealthKit, SwiftUI, ARKit, CoreML |
+| **Web** | React, Node.js, Django, Flask |
+| **ML/AI** | TensorFlow, PyTorch |
+
+### Usage
+
+```bash
+# Verify intent against framework-specific constraints
+curl -X POST "https://your-newton-api.com/frameworks/verify?intent=Build+an+app+with+torch.load&framework=pytorch"
+```
+
+### Example Constraints
+
+**PyTorch Security:**
+- Blocks untrusted `torch.load()` (arbitrary code execution risk)
+- Requires model checksum validation
+- Enforces confidence score display
+
+**React Security:**
+- Blocks `dangerouslySetInnerHTML` with user input
+- Requires ARIA labels for accessibility
+- Enforces XSS protection patterns
+
+**TensorFlow ML Safety:**
+- Blocks claims of "100% accuracy"
+- Requires human oversight for critical decisions
+- Enforces bias testing documentation
+
+---
+
+## Persistent Ledger
+
+Newton v3.0 features an immutable, cryptographically-chained audit trail with Merkle root verification.
+
+```bash
+# Configure persistent storage
+export NEWTON_LEDGER_PATH=/var/newton/ledger.json
+
+# Verify chain integrity
+curl https://your-newton-api.com/ledger/verify
+```
+
+```json
+{
+  "valid": true,
+  "entries": 1247,
+  "message": "Chain intact - all entries verified",
+  "merkle_root": "A7B3C8F2E1D4"
+}
+```
+
+**Features:**
+- SHA-256 cryptographic chaining
+- Merkle root computation for bulk verification
+- Tamper detection via hash mismatch
+- Persistent JSON storage (database-ready interface)
 
 ---
 
