@@ -62,6 +62,38 @@ curl -X POST https://your-newton-api.com/compile \
   -d '{"intent": "Build a fitness app with workout tracking"}'
 ```
 
+### Claim Grounding
+Verify factual claims against external sources using Google Search. Returns confidence scores based on supporting evidence from trusted domains (.gov, .edu, Reuters, AP News, etc.).
+
+```bash
+curl -X POST https://your-newton-api.com/ground \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Apple released the first iPhone in 2007"}'
+```
+
+```json
+{
+  "query": "Apple released the first iPhone in 2007",
+  "result": {
+    "claim": "Apple released the first iPhone in 2007",
+    "confidence_score": 1.5,
+    "status": "VERIFIED",
+    "sources": ["https://apple.com/...", "https://reuters.com/..."],
+    "timestamp": 1735689600,
+    "signature": "A7F3B2C8E1D4"
+  },
+  "verified": true
+}
+```
+
+**Confidence Scores:**
+| Score | Status | Meaning |
+|-------|--------|---------|
+| 0-2 | VERIFIED | Strong supporting evidence |
+| 2-5 | LIKELY | Moderate evidence |
+| 5-8 | UNCERTAIN | Weak evidence |
+| 8-10 | UNVERIFIED | No supporting evidence |
+
 ---
 
 ## Use Cases
@@ -86,6 +118,7 @@ curl -X POST https://your-newton-api.com/compile \
 | `/analyze` | POST | THIA anomaly detection (Z-score, IQR, MAD methods) |
 | `/analyze/batch` | POST | Batch analysis of multiple datasets |
 | `/compile` | POST | Rosetta compiler: natural language to AI-ready prompts |
+| `/ground` | POST | Claim grounding: verify facts against external sources via Google Search |
 
 ### Extension Cartridges
 
