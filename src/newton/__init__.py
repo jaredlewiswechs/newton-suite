@@ -106,6 +106,28 @@ from .tinytalk import (
 )
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Kinematic Linguistics - Geometric Semantic Verification
+# ═══════════════════════════════════════════════════════════════════════════════
+from .kinematic_linguistics import (
+    # Core Axiom: Language is a conserved geometric system
+    GlyphMechanics,
+    GlyphRegistry,
+    PhonosemanticsCluster,
+    PhonosemanticsRegistry,
+    WordVector,
+    WordAssembly,
+    WordAssemblyAnalyzer,
+    DistortionReport,
+    DistortionIndexCalculator,
+    AntonymType,
+    AntonymAnalyzer,
+    CompilerRegime,
+    CompilationProof,
+    KinematicCompiler,
+    HallucinationDetector,
+)
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # LLM Constraint Governor - Domain-agnostic validation
 # ═══════════════════════════════════════════════════════════════════════════════
 from .llm import (
@@ -214,6 +236,22 @@ __all__ = [
     "Presence",
     "Delta",
     "motion",
+    # Kinematic Linguistics
+    "GlyphMechanics",
+    "GlyphRegistry",
+    "PhonosemanticsCluster",
+    "PhonosemanticsRegistry",
+    "WordVector",
+    "WordAssembly",
+    "WordAssemblyAnalyzer",
+    "DistortionReport",
+    "DistortionIndexCalculator",
+    "AntonymType",
+    "AntonymAnalyzer",
+    "CompilerRegime",
+    "CompilationProof",
+    "KinematicCompiler",
+    "HallucinationDetector",
     # LLM Constraint Governor
     "LLMDomain",
     "Claim",
