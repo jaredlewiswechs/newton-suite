@@ -750,7 +750,9 @@ async def jester_analyze(request: JesterAnalyzeRequest):
 
     try:
         # Use the Jester analyzer
-        jester = Jester(request.code, SourceLanguage(request.language) if request.language else None)
+        # Extract language separately to avoid SourceLanguage(None) which raises ValueError
+        language = SourceLanguage(request.language) if request.language else None
+        jester = Jester(request.code, language)
         result = jester.analyze().to_dict()
 
         elapsed_us = int((time.perf_counter() - start) * 1_000_000)
@@ -803,7 +805,9 @@ async def jester_cdl(request: JesterCdlRequest):
     start = time.perf_counter()
 
     try:
-        jester = Jester(request.code, SourceLanguage(request.language) if request.language else None)
+        # Extract language separately to avoid SourceLanguage(None) which raises ValueError
+        language = SourceLanguage(request.language) if request.language else None
+        jester = Jester(request.code, language)
         cdl_output = jester.analyze().to_cdl()
 
         elapsed_us = int((time.perf_counter() - start) * 1_000_000)
@@ -969,20 +973,9 @@ BUILDER_DIR = ROOT_DIR / "interface-builder"
 PARCCLOUD_DIR = ROOT_DIR / "parccloud"
 JESTER_DIR = ROOT_DIR / "jester-analyzer"
 DEMO_DIR = ROOT_DIR / "newton-demo"
-
-# Helper: Find file across multiple possible paths (handles Render's environment)
-def find_app_file(app_dir: Path, filename: str = "index.html") -> Optional[Path]:
-    """Find a file, trying multiple path resolutions for Render compatibility."""
-    import os
-    possible_paths = [
-        app_dir / filename,
-        Path(os.getcwd()) / app_dir.name / filename,
-        Path("/opt/render/project/src") / app_dir.name / filename,
-    ]
-    for path in possible_paths:
-        if path.exists():
-            return path
-    return None
+TINYTALK_IDE_DIR = ROOT_DIR / "tinytalk-ide"
+CONSTRUCT_STUDIO_DIR = ROOT_DIR / "construct-studio"
+GAMES_DIR = ROOT_DIR / "games"
 
 # Helper: Find file across multiple possible paths (handles Render's environment)
 def find_app_file(app_dir: Path, filename: str = "index.html") -> Optional[Path]:
@@ -1006,9 +999,17 @@ if TEACHERS_DIR.exists():
 if BUILDER_DIR.exists():
     app.mount("/builder", StaticFiles(directory=str(BUILDER_DIR), html=True), name="builder")
 if JESTER_DIR.exists():
-    app.mount("/jester", StaticFiles(directory=str(JESTER_DIR), html=True), name="jester")
+    app.mount("/jester-analyzer", StaticFiles(directory=str(JESTER_DIR), html=True), name="jester-analyzer")
 if DEMO_DIR.exists():
-    app.mount("/demo", StaticFiles(directory=str(DEMO_DIR), html=True), name="demo")
+    app.mount("/newton-demo", StaticFiles(directory=str(DEMO_DIR), html=True), name="newton-demo")
+if PARCCLOUD_DIR.exists():
+    app.mount("/parccloud", StaticFiles(directory=str(PARCCLOUD_DIR), html=True), name="parccloud")
+if TINYTALK_IDE_DIR.exists():
+    app.mount("/tinytalk-ide", StaticFiles(directory=str(TINYTALK_IDE_DIR), html=True), name="tinytalk-ide")
+if CONSTRUCT_STUDIO_DIR.exists():
+    app.mount("/construct-studio", StaticFiles(directory=str(CONSTRUCT_STUDIO_DIR), html=True), name="construct-studio")
+if GAMES_DIR.exists():
+    app.mount("/games", StaticFiles(directory=str(GAMES_DIR), html=True), name="games")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # NEWTON PHONE - Static Frontend Routes
@@ -1028,7 +1029,11 @@ async def serve_home():
 
     for index_file in possible_paths:
         if index_file.exists():
-            return HTMLResponse(content=index_file.read_text(), status_code=200)
+            return HTMLResponse(
+                content=index_file.read_text(), 
+                status_code=200,
+                media_type="text/html"
+            )
 
     # Log debug info if not found
     print(f"[Newton] index.html not found. ROOT_DIR={ROOT_DIR}, CWD={os.getcwd()}")
@@ -1122,7 +1127,11 @@ async def serve_newton_app():
     """Serve the Newton Supercomputer app"""
     index_file = find_app_file(FRONTEND_DIR)
     if index_file:
-        return HTMLResponse(content=index_file.read_text(), status_code=200)
+        return HTMLResponse(
+            content=index_file.read_text(), 
+            status_code=200,
+            media_type="text/html"
+        )
     return HTMLResponse(content="<h1>Newton App</h1><p>Not found</p>", status_code=404)
 
 @app.get("/teachers", response_class=HTMLResponse)
@@ -1130,7 +1139,11 @@ async def serve_teachers_aide():
     """Serve Teacher's Aide app"""
     index_file = find_app_file(TEACHERS_DIR)
     if index_file:
-        return HTMLResponse(content=index_file.read_text(), status_code=200)
+        return HTMLResponse(
+            content=index_file.read_text(), 
+            status_code=200,
+            media_type="text/html"
+        )
     return HTMLResponse(content="<h1>Teacher's Aide</h1><p>Not found</p>", status_code=404)
 
 @app.get("/builder", response_class=HTMLResponse)
@@ -1138,7 +1151,11 @@ async def serve_builder():
     """Serve Interface Builder app"""
     index_file = find_app_file(BUILDER_DIR)
     if index_file:
-        return HTMLResponse(content=index_file.read_text(), status_code=200)
+        return HTMLResponse(
+            content=index_file.read_text(), 
+            status_code=200,
+            media_type="text/html"
+        )
     return HTMLResponse(content="<h1>Interface Builder</h1><p>Not found</p>", status_code=404)
 
 
