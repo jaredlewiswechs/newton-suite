@@ -21,6 +21,7 @@ One API. Multiple capabilities. Single identity.
 from fastapi import FastAPI, HTTPException, Depends, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from collections import defaultdict
@@ -2527,6 +2528,17 @@ async def ground_claim(request: GroundRequest):
         "verified": result["status"] == "VERIFIED",
         "engine": ENGINE
     }
+
+# ═══════════════════════════════════════════════════════════════════════════
+# STATIC FILES (must come after all routes)
+# ═══════════════════════════════════════════════════════════════════════════
+
+BASE_DIR = Path(__file__).resolve().parent.parent  # Go up to repo root
+app.mount(
+    "/teachers-aide",
+    StaticFiles(directory=str(BASE_DIR / "teachers-aide"), html=True),
+    name="teachers-aide",
+)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # MAIN

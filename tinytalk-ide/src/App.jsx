@@ -8,6 +8,7 @@ import LedgerPanel from './components/LedgerPanel';
 import OutputPanel from './components/OutputPanel';
 import OmegaPanel from './components/OmegaPanel';
 import ForgeRunner from './components/ForgeRunner';
+import TutorialPanel from './components/TutorialPanel';
 
 const DEFAULT_SOURCE = `# ═══════════════════════════════════════════════
 # StatsSovereign — No-First Statistics
@@ -79,7 +80,7 @@ export default function App() {
   const [ledger, setLedger] = useState([]);
   const [omega, setOmega] = useState([]);
   const [logs, setLogs] = useState([]);
-  const [activePanel, setActivePanel] = useState('witness');
+  const [activePanel, setActivePanel] = useState('tutorial'); // Start with tutorial
   const [status, setStatus] = useState('idle'); // idle | fin | finfr
   const [currentBlueprint, setCurrentBlueprint] = useState(null);
   const [examples, setExamples] = useState([]);
@@ -288,6 +289,7 @@ export default function App() {
   };
 
   const panels = {
+    tutorial: <TutorialPanel onLoadExample={handleLoadExample} />,
     witness: <WitnessPanel witness={witness} result={lastRunResult} state={currentState} />,
     ast: <ASTPanel ast={ast} errors={parseErrors} />,
     omega: <OmegaPanel omega={omega} />,
@@ -299,8 +301,8 @@ export default function App() {
     <div className="ide-container">
       <header className="ide-header">
         <h1>
-          <span className="logo">TinyTalk</span>
-          <span className="subtitle">No-First Programming Environment</span>
+          <span className="logo">Newton</span>
+          <span className="subtitle">Constraint-First IDE</span>
         </h1>
         <div className="toolbar-status">
           <span className={`status-dot ${status}`} />
@@ -345,13 +347,14 @@ export default function App() {
               />
 
               <div className="panel-tabs">
-                {['witness', 'ast', 'omega', 'ledger', 'output'].map(tab => (
+                {['tutorial', 'witness', 'ast', 'omega', 'ledger', 'output'].map(tab => (
                   <button
                     key={tab}
                     className={`panel-tab ${activePanel === tab ? 'active' : ''}`}
                     onClick={() => setActivePanel(tab)}
                   >
-                    {tab === 'witness' ? 'Witness' :
+                    {tab === 'tutorial' ? '📖 Tutorial' :
+                     tab === 'witness' ? 'Witness' :
                      tab === 'ast' ? 'AST' :
                      tab === 'omega' ? '\u03A9' :
                      tab === 'ledger' ? 'Ledger' : 'Output'}
