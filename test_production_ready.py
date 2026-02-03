@@ -12,9 +12,9 @@ Three rigorous tests to prove Newton Agent is not a demo
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from newton_agent import NewtonAgent
-from newton_agent.knowledge_base import COUNTRY_CAPITALS, get_knowledge_base
-from newton_agent.ada import get_ada
+from adan import NewtonAgent
+from adan.knowledge_base import COUNTRY_CAPITALS, get_knowledge_base
+from adan.ada import get_ada
 
 
 def test_paraphrase_storm():
@@ -168,7 +168,7 @@ def test_source_drift():
     COUNTRY_CAPITALS["germany"] = "TestCity"
     
     # Clear KB cache by getting fresh instance
-    import newton_agent.knowledge_base as kb_module
+    import adan.knowledge_base as kb_module
     kb_module._knowledge_base = None
     agent2 = NewtonAgent()
     

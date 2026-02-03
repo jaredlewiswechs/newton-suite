@@ -511,6 +511,9 @@ async def code_evaluate(req: CodeRequest):
 class DictionaryRequest(BaseModel):
     word: str
 
+class VoicePathRequest(BaseModel):
+    description: str  # Natural language description of audio
+
 @app.post("/cartridge/dictionary/define")
 async def dictionary_define(req: DictionaryRequest):
     """Get word definition from Free Dictionary API."""
@@ -554,6 +557,76 @@ async def dictionary_define(req: DictionaryRequest):
                 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VOICEPATH CARTRIDGE - Audio spec generation from natural language
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.post("/cartridge/voicepath/generate")
+async def voicepath_generate(req: VoicePathRequest):
+    """
+    Generate audio specification from natural language description.
+    This creates a structured audio spec that could be used with audio generation tools.
+    """
+    desc = req.description.lower()
+    
+    # Parse tempo hints
+    tempo = 120  # default
+    if "slow" in desc or "relaxing" in desc or "calm" in desc:
+        tempo = 70
+    elif "fast" in desc or "energetic" in desc or "upbeat" in desc:
+        tempo = 140
+    elif "medium" in desc or "moderate" in desc:
+        tempo = 100
+    
+    # Parse style hints
+    style = "ambient"
+    style_keywords = {
+        "ambient": ["ambient", "atmospheric", "space", "floating"],
+        "electronic": ["electronic", "synth", "digital", "techno"],
+        "acoustic": ["acoustic", "natural", "organic", "guitar"],
+        "orchestral": ["orchestral", "classical", "symphony", "strings"],
+        "jazz": ["jazz", "swing", "smooth", "blues"],
+        "rock": ["rock", "guitar", "drums", "heavy"],
+        "lofi": ["lofi", "chill", "study", "lo-fi"]
+    }
+    for s, keywords in style_keywords.items():
+        if any(k in desc for k in keywords):
+            style = s
+            break
+    
+    # Parse key hints
+    key = "C major"
+    if "minor" in desc or "sad" in desc or "melancholy" in desc or "dark" in desc:
+        key = "A minor"
+    elif "bright" in desc or "happy" in desc or "joyful" in desc:
+        key = "G major"
+    
+    # Parse duration hints
+    duration = "30s"
+    if "short" in desc or "brief" in desc:
+        duration = "15s"
+    elif "long" in desc or "extended" in desc:
+        duration = "60s"
+    elif "loop" in desc:
+        duration = "8s (loop)"
+    
+    return {
+        "type": "voicepath",
+        "description": req.description,
+        "audio_spec": {
+            "tempo": tempo,
+            "key": key,
+            "style": style,
+            "duration": duration
+        },
+        "tempo": tempo,
+        "key": key,
+        "style": style,
+        "duration": duration,
+        "generated": datetime.now().isoformat()
+    }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -602,6 +675,20 @@ CARTRIDGES = [
         icon="📖",
         description="Word definitions and examples",
         endpoints=["/cartridge/dictionary/define"]
+    ),
+    CartridgeInfo(
+        id="voicepath",
+        name="VoicePath",
+        icon="🎵",
+        description="Generate audio specs from natural language",
+        endpoints=["/cartridge/voicepath/generate"]
+    ),
+    CartridgeInfo(
+        id="grounding",
+        name="Grounding",
+        icon="🔍",
+        description="Verify claims with external evidence (via Newton)",
+        endpoints=["(uses Newton /ground endpoint)"]
     ),
 ]
 

@@ -18,15 +18,15 @@ from hypothesis import given, settings, assume
 from hypothesis import strategies as st
 from datetime import datetime, timedelta
 
-from newton_agent.ada import (
+from adan.ada import (
     Ada, AlertLevel, DriftType, Anomaly, Whisper, Baseline,
     DriftDetector, SensePattern, get_ada
 )
-from newton_agent.meta_newton import (
+from adan.meta_newton import (
     MetaNewton, MetaVerification, VerificationLevel, ConstraintStatus,
     MetaConstraint, get_meta_newton
 )
-from newton_agent.knowledge_sources import (
+from adan.knowledge_sources import (
     KnowledgeMesh, MeshFact, SourceTier, SOURCES, get_knowledge_mesh
 )
 

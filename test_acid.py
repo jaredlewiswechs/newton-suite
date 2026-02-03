@@ -24,10 +24,10 @@ This tests EVERYTHING:
 
 import time
 import hashlib
-from newton_agent import NewtonAgent
-from newton_agent.identity import get_identity
-from newton_agent.ada import get_ada
-from newton_agent.meta_newton import get_meta_newton
+from adan import NewtonAgent
+from adan.identity import get_identity
+from adan.ada import get_ada
+from adan.meta_newton import get_meta_newton
 
 
 def acid_identity():

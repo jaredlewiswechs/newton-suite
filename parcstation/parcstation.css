@@ -1,45 +1,48 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * PARCSTATION STYLES
+ * PARCSTATION STYLES — LIGHT MODE
  * The Spatial Interface for Verified Knowledge
+ * 
+ * Apple HIG 2026 Light Mode · Squircle Mathematics · Bézier Motion
+ * Squircle: |x/a|^n + |y/b|^n = 1, n ≈ 5 (Apple's continuous corners)
  * 
  * © 2026 Jared Lewis · Ada Computing Company · Houston, Texas
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   CSS VARIABLES
+   CSS VARIABLES — Light Mode Apple HIG
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 :root {
-    /* Colors - Dark theme */
-    --bg-primary: #0a0a12;
-    --bg-secondary: #12121a;
-    --bg-tertiary: #1a1a24;
-    --bg-panel: rgba(18, 18, 26, 0.95);
+    /* Colors - Light theme (Apple HIG 2026) */
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F5F5F7;
+    --bg-tertiary: #E8E8ED;
+    --bg-panel: rgba(255, 255, 255, 0.92);
     
-    /* Trust colors */
-    --trust-verified: #00ff88;
-    --trust-partial: #4a9eff;
-    --trust-draft: #888888;
-    --trust-unverified: #ffaa00;
-    --trust-disputed: #ff0044;
+    /* Trust colors - vibrant on light */
+    --trust-verified: #34C759;
+    --trust-partial: #007AFF;
+    --trust-draft: #8E8E93;
+    --trust-unverified: #FF9500;
+    --trust-disputed: #FF3B30;
     
     /* Accent colors */
-    --accent-primary: #4a9eff;
-    --accent-secondary: #a855f7;
-    --accent-success: #22c55e;
-    --accent-warning: #f59e0b;
-    --accent-danger: #ef4444;
+    --accent-primary: #007AFF;
+    --accent-secondary: #AF52DE;
+    --accent-success: #34C759;
+    --accent-warning: #FF9500;
+    --accent-danger: #FF3B30;
     
-    /* Text */
-    --text-primary: #f0f0f8;
-    --text-secondary: #a0a0b0;
-    --text-muted: #606070;
+    /* Text - dark on light */
+    --text-primary: #1D1D1F;
+    --text-secondary: #6E6E73;
+    --text-muted: #AEAEB2;
     
-    /* Borders */
-    --border-color: rgba(255, 255, 255, 0.1);
-    --border-glow: rgba(74, 158, 255, 0.3);
+    /* Borders - subtle for light mode */
+    --border-color: rgba(0, 0, 0, 0.08);
+    --border-glow: rgba(0, 122, 255, 0.25);
     
     /* Spacing */
     --spacing-xs: 4px;
@@ -48,26 +51,35 @@
     --spacing-lg: 24px;
     --spacing-xl: 32px;
     
-    /* Radius */
-    --radius-sm: 4px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
-    --radius-xl: 16px;
+    /* Squircle radii (continuous corners) */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
     
     /* Typography */
-    --font-sans: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --font-sans: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
+    
+    /* Bézier Motion Curves */
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --spring-bouncy: cubic-bezier(0.175, 0.885, 0.32, 1.275);
     
     /* Transitions */
-    --transition-fast: 150ms ease;
-    --transition-normal: 250ms ease;
-    --transition-slow: 400ms ease;
+    --transition-fast: 150ms var(--ease-out);
+    --transition-normal: 250ms var(--ease-out);
+    --transition-slow: 400ms var(--ease-out);
     
-    /* Shadows */
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 20px rgba(74, 158, 255, 0.3);
+    /* Shadows - soft for light mode */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+    --shadow-glow: 0 0 20px rgba(0, 122, 255, 0.15);
+    
+    /* Glass effect - luminous */
+    --glass-bg: rgba(255, 255, 255, 0.72);
+    --glass-blur: 20px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -572,7 +584,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   BUTTONS
+   BUTTONS - Spring Animations
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 .btn {
@@ -584,29 +596,36 @@ body {
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all 0.2s var(--spring);
     border: 1px solid transparent;
 }
 
 .btn-primary {
     background: var(--accent-primary);
     color: white;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
 }
 
 .btn-primary:hover {
-    background: #3a8eef;
-    box-shadow: var(--shadow-glow);
+    background: #0056CC;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0, 122, 255, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0) scale(0.98);
 }
 
 .btn-secondary {
-    background: var(--bg-tertiary);
+    background: var(--bg-secondary);
     color: var(--text-secondary);
     border-color: var(--border-color);
 }
 
 .btn-secondary:hover {
-    background: var(--bg-panel);
+    background: var(--bg-tertiary);
     color: var(--text-primary);
+    transform: translateY(-1px);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -617,19 +636,26 @@ body {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
-    background: var(--bg-secondary);
+    transform: translate(-50%, -50%) scale(0.95);
+    background: var(--bg-primary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     max-width: 500px;
     width: 90%;
     padding: 0;
+    opacity: 0;
+    transition: all 0.3s var(--spring);
+}
+
+.modal[open] {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
 }
 
 .modal::backdrop {
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(8px);
 }
 
 .modal-content {

@@ -13,7 +13,7 @@ const CONFIG = {
     // Newton Supercomputer API
     NEWTON_URL: 'http://localhost:8000',
     // Newton Agent API
-    AGENT_URL: 'http://localhost:8091',
+    AGENT_URL: 'http://localhost:8090',
     // Cartridge API
     CARTRIDGE_URL: 'http://localhost:8093',
     // Local storage key
@@ -845,11 +845,16 @@ class ParcStationApp {
         
         // Define available cartridges with their handlers
         const cartridgeItems = [
-            { id: 'wikipedia', icon: '📚', name: 'Wikipedia', action: () => this.openCartridgeSheet('wikipedia') },
-            { id: 'arxiv', icon: '📄', name: 'arXiv', action: () => this.openCartridgeSheet('arxiv') },
-            { id: 'calendar', icon: '📅', name: 'Calendar', action: () => this.openCartridgeSheet('calendar') },
-            { id: 'dictionary', icon: '📖', name: 'Dictionary', action: () => this.openCartridgeSheet('dictionary') },
-            { id: 'export', icon: '📤', name: 'Export', action: () => this.openExportSheet() },
+            { id: 'calculator', icon: '🔢', name: 'Calculator', action: () => this.activateCartridge('calculator') },
+            { id: 'grounding', icon: '🔍', name: 'Grounding', action: () => this.activateCartridge('grounding') },
+            { id: 'knowledge', icon: '🧠', name: 'Knowledge', action: () => this.activateCartridge('knowledge') },
+            { id: 'wikipedia', icon: '📚', name: 'Wikipedia', action: () => this.activateCartridge('wikipedia') },
+            { id: 'arxiv', icon: '📄', name: 'arXiv', action: () => this.activateCartridge('arxiv') },
+            { id: 'dictionary', icon: '📖', name: 'Dictionary', action: () => this.activateCartridge('dictionary') },
+            { id: 'calendar', icon: '📅', name: 'Calendar', action: () => this.activateCartridge('calendar') },
+            { id: 'trajectory', icon: '📐', name: 'Trajectory', action: () => this.activateCartridge('trajectory') },
+            { id: 'voicepath', icon: '🎵', name: 'VoicePath', action: () => this.activateCartridge('voicepath') },
+            { id: 'export', icon: '📤', name: 'Export', action: () => this.exportStacks() },
         ];
         
         cartridgeList.innerHTML = cartridgeItems.map(c => `
@@ -1803,12 +1808,23 @@ class ParcStationApp {
             'calendar': { name: 'Calendar', icon: '📅', placeholder: 'e.g., next friday, in 3 days' },
             'dictionary': { name: 'Dictionary', icon: '📚', placeholder: 'Enter word to define...' },
             'code': { name: 'Code Runner', icon: '💻', placeholder: 'Enter code...' },
+            'grounding': { name: 'Grounding', icon: '🔍', placeholder: 'Verify a claim with evidence...' },
+            'voicepath': { name: 'VoicePath', icon: '🎵', placeholder: 'Describe audio to generate...' },
+            'trajectory': { name: 'Trajectory', icon: '📐', placeholder: 'Analyze text as kinematic trajectory...' },
+            'knowledge': { name: 'Knowledge', icon: '🧠', placeholder: 'Ask a factual question...' },
+            'documents': { name: 'Documents', icon: '📝', placeholder: '', isView: true },
             'export': { name: 'Export', icon: '📤', placeholder: '' }
         };
 
         const info = cartridgeInfo[cartridgeId];
         if (!info) {
             this.showToast('Unknown cartridge');
+            return;
+        }
+
+        // Special case: Documents opens the documents view
+        if (cartridgeId === 'documents') {
+            this.navigateTo('documents');
             return;
         }
 
@@ -1880,6 +1896,18 @@ class ParcStationApp {
                 case 'dictionary':
                     results = await this.defineWord(query);
                     break;
+                case 'grounding':
+                    results = await this.groundClaim(query);
+                    break;
+                case 'voicepath':
+                    results = await this.generateVoicePath(query);
+                    break;
+                case 'trajectory':
+                    results = await this.analyzeTrajectory(query);
+                    break;
+                case 'knowledge':
+                    results = await this.queryKnowledge(query);
+                    break;
                 default:
                     results = { error: 'Unknown cartridge' };
             }
@@ -1909,12 +1937,115 @@ class ParcStationApp {
     }
 
     async calculate(expression) {
+        // Priority order:
+        // 1. Newton Supercomputer Logic Engine (verified computation)
+        // 2. Newton Agent TI Calculator (TI-84 style)
+        // 3. Cartridge basic math fallback
+        
+        // Try Newton Supercomputer Logic Engine first (verified Turing-complete)
+        try {
+            const newtonResp = await fetch(`${CONFIG.NEWTON_URL}/calculate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    expression: this.parseToLogicExpression(expression),
+                    max_iterations: 1000,
+                    max_operations: 10000,
+                    timeout_seconds: 5.0
+                })
+            });
+            if (newtonResp.ok) {
+                const data = await newtonResp.json();
+                if (data.result !== null && data.result !== undefined) {
+                    return {
+                        result: data.result,
+                        input: expression,
+                        expression: expression,
+                        verified: data.verified,
+                        source: 'Newton Logic Engine',
+                        operations: data.operations,
+                        fingerprint: data.fingerprint
+                    };
+                }
+            }
+        } catch (e) {
+            console.log('Newton Logic Engine unavailable, trying Agent...');
+        }
+
+        // Try Newton Agent's TI Calculator (full TI-84 support)
+        try {
+            const agentResp = await fetch(`${CONFIG.AGENT_URL}/calculate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ expression })
+            });
+            if (agentResp.ok) {
+                const data = await agentResp.json();
+                return {
+                    result: data.result,
+                    input: expression,
+                    expression: expression,
+                    verified: data.verified !== false,
+                    source: data.source || 'TI Calculator'
+                };
+            }
+        } catch (e) {
+            console.log('Agent calculator unavailable, using cartridge fallback');
+        }
+        // Fallback to cartridge basic math
         const resp = await fetch(`${CONFIG.CARTRIDGE_URL}/cartridge/code/evaluate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code: expression })
         });
         return resp.json();
+    }
+
+    // Parse simple math expressions to Newton Logic Engine format
+    parseToLogicExpression(expr) {
+        // If already in Newton format (object), return as-is
+        if (typeof expr === 'object') return expr;
+        
+        // Simple arithmetic: "2+3" -> {"op": "+", "args": [2, 3]}
+        const str = String(expr).trim();
+        
+        // Handle simple binary operations
+        const opMap = {
+            '+': '+', '-': '-', '*': '*', '/': '/', 
+            '^': '^', '**': '^', '%': 'mod'
+        };
+        
+        for (const [sym, op] of Object.entries(opMap)) {
+            if (str.includes(sym) && !str.startsWith(sym)) {
+                const parts = str.split(sym);
+                if (parts.length === 2) {
+                    const a = parseFloat(parts[0].trim());
+                    const b = parseFloat(parts[1].trim());
+                    if (!isNaN(a) && !isNaN(b)) {
+                        return { op, args: [a, b] };
+                    }
+                }
+            }
+        }
+        
+        // Handle functions: sqrt(16) -> {"op": "sqrt", "args": [16]}
+        const funcMatch = str.match(/^(\w+)\s*\(\s*(.+)\s*\)$/);
+        if (funcMatch) {
+            const func = funcMatch[1].toLowerCase();
+            const arg = parseFloat(funcMatch[2]);
+            if (!isNaN(arg)) {
+                return { op: func, args: [arg] };
+            }
+        }
+        
+        // Just a number
+        const num = parseFloat(str);
+        if (!isNaN(num)) {
+            return num;
+        }
+        
+        // Return as string for Newton to parse
+        return str;
     }
 
     async parseDate(query) {
@@ -1931,6 +2062,100 @@ class ParcStationApp {
         const resp = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
         if (!resp.ok) return { error: 'Word not found' };
         return { results: await resp.json(), type: 'dictionary' };
+    }
+
+    async groundClaim(claim) {
+        // Use Newton Agent's ENHANCED grounding (Google + DuckDuckGo + Wikipedia)
+        try {
+            const resp = await fetch(`${CONFIG.AGENT_URL}/ground`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ claim, require_official: false })
+            });
+            if (!resp.ok) {
+                // Fallback to Newton Supercomputer if Agent is down
+                const fallback = await fetch(`${CONFIG.NEWTON_URL}/ground`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ claim, max_results: 5 })
+                });
+                if (!fallback.ok) throw new Error('All grounding services unavailable');
+                const data = await fallback.json();
+                return { type: 'grounding', claim, ...data };
+            }
+            const data = await resp.json();
+            return { 
+                type: 'grounding', 
+                claim: claim,
+                grounded: data.status === 'VERIFIED' || data.status === 'LIKELY',
+                confidence: (10 - (data.confidence_score || 10)) / 10, // Convert 0-10 to 0-1 (inverted)
+                status: data.status,
+                sources: data.evidence?.map(e => ({
+                    url: e.url,
+                    title: e.title,
+                    type: e.tier || 'web'
+                })) || [],
+                reasoning: data.reasoning || '',
+                ...data
+            };
+        } catch (e) {
+            return { error: `Grounding failed: ${e.message}. Is Newton Agent running on ${CONFIG.AGENT_URL}?` };
+        }
+    }
+
+    async generateVoicePath(description) {
+        // VoicePath generates audio specs from natural language
+        try {
+            const resp = await fetch(`${CONFIG.CARTRIDGE_URL}/cartridge/voicepath/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description })
+            });
+            if (!resp.ok) throw new Error('VoicePath service unavailable');
+            return await resp.json();
+        } catch (e) {
+            return { error: `VoicePath failed: ${e.message}` };
+        }
+    }
+
+    async analyzeTrajectory(text) {
+        // Kinematic Linguistics: Language as Bézier trajectories through meaning space
+        try {
+            const resp = await fetch(`${CONFIG.AGENT_URL}/trajectory/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+            if (!resp.ok) throw new Error('Trajectory analysis unavailable');
+            const data = await resp.json();
+            return { type: 'trajectory', text, ...data };
+        } catch (e) {
+            return { error: `Trajectory analysis failed: ${e.message}. Is Newton Agent running?` };
+        }
+    }
+
+    async queryKnowledge(query) {
+        // Query Newton Agent's verified knowledge base (CIA Factbook, NIST, etc.)
+        try {
+            const resp = await fetch(`${CONFIG.AGENT_URL}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: query, ground_claims: true })
+            });
+            if (!resp.ok) throw new Error('Knowledge service unavailable');
+            const data = await resp.json();
+            return { 
+                type: 'knowledge', 
+                query,
+                answer: data.content,
+                verified: data.verified,
+                grounding: data.grounding,
+                sources: data.grounding?.results || [],
+                ...data
+            };
+        } catch (e) {
+            return { error: `Knowledge query failed: ${e.message}. Is Newton Agent running?` };
+        }
     }
 
     renderCartridgeResults(data) {
@@ -2011,6 +2236,123 @@ class ParcStationApp {
                             `).join('')}
                         </div>
                     `).join('')}
+                </div>
+            `;
+        }
+        // Grounding result (from Newton)
+        else if (data.type === 'grounding') {
+            const verifiedClass = data.grounded ? 'verified' : 'unverified';
+            const verifiedIcon = data.grounded ? '✓' : '⚠';
+            const verifiedText = data.grounded ? 'Grounded in Evidence' : 'Insufficient Evidence';
+            
+            resultsEl.innerHTML = `
+                <div class="cartridge-result-grounding">
+                    <div class="grounding-claim">"${this.escapeHtml(data.claim)}"</div>
+                    <div class="grounding-verdict ${verifiedClass}">
+                        <span class="verdict-icon">${verifiedIcon}</span>
+                        <span class="verdict-text">${verifiedText}</span>
+                    </div>
+                    <div class="grounding-confidence">
+                        Confidence: ${Math.round((data.confidence || 0) * 100)}%
+                    </div>
+                    ${data.sources?.length ? `
+                        <div class="grounding-sources">
+                            <div class="sources-title">Evidence Sources:</div>
+                            ${data.sources.map(s => `
+                                <div class="source-item">
+                                    <span class="source-type">${s.type || 'web'}</span>
+                                    <a href="${s.url || '#'}" target="_blank" class="source-link">${this.escapeHtml(s.title || s.url || 'Source')}</a>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                    <div class="grounding-actions">
+                        <button class="btn btn-primary btn-sm" onclick="app.useGroundingAsVerification('${this.escapeHtml(data.claim)}', ${data.grounded}, ${data.confidence || 0})">
+                            Use for Verification
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        // VoicePath result
+        else if (data.type === 'voicepath' || data.audio_spec) {
+            resultsEl.innerHTML = `
+                <div class="cartridge-result-voicepath">
+                    <div class="voicepath-title">Generated Audio Spec</div>
+                    <div class="voicepath-spec">
+                        <div class="spec-row"><span class="spec-label">Duration:</span> ${data.duration || '10s'}</div>
+                        <div class="spec-row"><span class="spec-label">Tempo:</span> ${data.tempo || '120'} BPM</div>
+                        <div class="spec-row"><span class="spec-label">Key:</span> ${data.key || 'C major'}</div>
+                        <div class="spec-row"><span class="spec-label">Style:</span> ${data.style || 'ambient'}</div>
+                    </div>
+                    ${data.description ? `<div class="voicepath-desc">${this.escapeHtml(data.description)}</div>` : ''}
+                    <div class="voicepath-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(JSON.stringify(${JSON.stringify(data)}, null, 2)); app.showToast('Spec copied!')">
+                            Copy Spec
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        // Trajectory/Kinematic analysis result
+        else if (data.type === 'trajectory') {
+            const metrics = data.metrics || {};
+            resultsEl.innerHTML = `
+                <div class="cartridge-result-trajectory">
+                    <div class="trajectory-title">📐 Kinematic Analysis</div>
+                    <div class="trajectory-text">"${this.escapeHtml(data.text)}"</div>
+                    <div class="trajectory-metrics">
+                        <div class="metric">
+                            <span class="metric-label">Weight</span>
+                            <div class="metric-bar"><div class="metric-fill" style="width: ${(metrics.total_weight || 0) * 10}%"></div></div>
+                            <span class="metric-value">${(metrics.total_weight || 0).toFixed(2)}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Curvature</span>
+                            <div class="metric-bar"><div class="metric-fill curvature" style="width: ${Math.abs(metrics.total_curvature || 0) * 50 + 50}%"></div></div>
+                            <span class="metric-value">${(metrics.total_curvature || 0).toFixed(2)}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Commit</span>
+                            <div class="metric-bar"><div class="metric-fill commit" style="width: ${(metrics.total_commit || 0) * 100}%"></div></div>
+                            <span class="metric-value">${(metrics.total_commit || 0).toFixed(2)}</span>
+                        </div>
+                    </div>
+                    ${data.grammar ? `
+                        <div class="trajectory-grammar">
+                            <span class="grammar-label">Grammar:</span>
+                            <span class="grammar-status ${data.grammar.envelopes_balanced ? 'valid' : 'invalid'}">
+                                ${data.grammar.envelopes_balanced ? '✓ Balanced' : '⚠ Unbalanced'}
+                            </span>
+                            <span class="grammar-status ${data.grammar.properly_terminated ? 'valid' : 'invalid'}">
+                                ${data.grammar.properly_terminated ? '✓ Terminated' : '⚠ Open'}
+                            </span>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        // Knowledge/Chat result
+        else if (data.type === 'knowledge') {
+            const verified = data.verified;
+            resultsEl.innerHTML = `
+                <div class="cartridge-result-knowledge">
+                    <div class="knowledge-query">Q: ${this.escapeHtml(data.query)}</div>
+                    <div class="knowledge-answer ${verified ? 'verified' : ''}">
+                        <div class="answer-content">${this.escapeHtml(data.answer || 'No answer found')}</div>
+                        ${verified ? '<div class="answer-badge">✓ Verified</div>' : ''}
+                    </div>
+                    ${data.sources?.length ? `
+                        <div class="knowledge-sources">
+                            <div class="sources-title">Sources:</div>
+                            ${data.sources.slice(0, 3).map(s => `
+                                <div class="source-item">
+                                    <span class="source-status ${s.status?.toLowerCase() || 'unknown'}">${s.status || '?'}</span>
+                                    <span class="source-claim">${this.escapeHtml(s.claim || '')}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }

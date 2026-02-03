@@ -17,7 +17,7 @@ Tests:
 import time
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
-from newton_agent import NewtonAgent
+from adan import NewtonAgent
 
 
 @dataclass

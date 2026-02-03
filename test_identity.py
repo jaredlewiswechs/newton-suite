@@ -6,8 +6,8 @@ Newton knows who he is. Test it.
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from newton_agent import NewtonAgent
-from newton_agent.identity import get_identity
+from adan import NewtonAgent
+from adan.identity import get_identity
 
 
 def test_identity():

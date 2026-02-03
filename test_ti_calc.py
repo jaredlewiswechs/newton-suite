@@ -4,7 +4,7 @@ TI CALCULATOR COMPREHENSIVE TEST
 Tests all TI-84 style calculations through Newton Agent.
 """
 
-from newton_agent import NewtonAgent
+from adan import NewtonAgent
 
 
 def test_ti_calculator():

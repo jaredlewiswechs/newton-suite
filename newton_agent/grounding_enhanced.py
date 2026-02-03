@@ -243,7 +243,10 @@ class EnhancedGroundingEngine:
         
         try:
             url = f"https://api.duckduckgo.com/?q={quote_plus(query)}&format=json&no_html=1"
-            with httpx.Client(timeout=5.0) as client:
+            headers = {
+                "User-Agent": "NewtonAgent/1.0 (https://newton.ada.com; contact@ada.com) httpx/0.28"
+            }
+            with httpx.Client(timeout=5.0, headers=headers) as client:
                 response = client.get(url)
                 data = response.json()
             
@@ -284,7 +287,11 @@ class EnhancedGroundingEngine:
                 f"&format=json&srlimit=3"
             )
             
-            with httpx.Client(timeout=5.0) as client:
+            headers = {
+                "User-Agent": "NewtonAgent/1.0 (https://newton.ada.com; contact@ada.com) httpx/0.28"
+            }
+            
+            with httpx.Client(timeout=5.0, headers=headers) as client:
                 response = client.get(search_url)
                 data = response.json()
             
