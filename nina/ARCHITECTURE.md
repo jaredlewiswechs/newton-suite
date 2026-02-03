@@ -11,12 +11,51 @@
 | Component | Status | Tests | Notes |
 |-----------|--------|-------|-------|
 | Architecture | ✅ | - | This document |
-| Consumer UI | 🔄 | - | PDA interface |
-| Developer Forge | 🔄 | - | Verification tools |
-| Regime System | ⏳ | ⏳ | From paper Section 10.1 |
-| Distortion Metric | ⏳ | ⏳ | D(w,a) = d(v(a), g(w)) |
-| Trust Lattice | ⏳ | ⏳ | IFC upgrade mechanism |
-| Pipeline | ⏳ | ⏳ | 9-stage compiler |
+| Consumer UI | ✅ | - | index.html, nina-pda.css, nina-pda.js |
+| Developer Forge | ✅ | - | Python package structure |
+| Regime System | ✅ | ✅ | `regime.py` - Section 10.1 |
+| Distortion Metric | ✅ | ✅ | `distortion.py` - D(w,a) = d(v(a), g(w)) |
+| Trust Lattice | ✅ | ✅ | `trust.py` - IFC upgrade mechanism |
+| Pipeline | ✅ | ✅ | `pipeline.py` - 9-stage compiler |
+| **Knowledge Bridge** | ✅ | - | `knowledge.py` - Bridges to adan_portable KB |
+| Server | ✅ | - | `server.py` - HTTP on port 8080 |
+
+**Build Status: COMPLETE** ✅
+
+---
+
+## ⚠️ CRITICAL: Knowledge Architecture
+
+Nina does **NOT** reimplement the knowledge base. It **BRIDGES** to `adan_portable`:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    KNOWLEDGE ARCHITECTURE                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────┐       ┌─────────────────────────────────────┐ │
+│  │    NINA     │       │         ADAN_PORTABLE               │ │
+│  │  Pipeline   │──────▶│  • KnowledgeBase (2845 lines)       │ │
+│  │             │       │  • KnowledgeStore (persistent)       │ │
+│  │ knowledge.py│       │  • QueryParser (kinematic shapes)    │ │
+│  │  (bridge)   │       │  • Adanpedia (Wikipedia imports)     │ │
+│  └─────────────┘       └─────────────────────────────────────┘ │
+│                                                                 │
+│  5-TIER KINEMATIC SEMANTICS (from adan_portable):              │
+│    0. STORE    - Shared knowledge store (~0ms)                  │
+│    1. SHAPE    - Kinematic query parsing (~0ms)                 │
+│    2. SEMANTIC - Datamuse semantic field resolution (~200ms)    │
+│    3. KEYWORD  - Traditional pattern matching (~1ms)            │
+│    4. EMBEDDING- Vector search (~100ms) [if available]          │
+│                                                                 │
+│  SOURCES (CIA World Factbook, NIST, ISO, etc.):                │
+│    • 200+ countries with capitals, populations, languages       │
+│    • 118 elements periodic table                                │
+│    • 50+ company facts                                          │
+│    • Scientific constants, SI units                             │
+│    • Chemical formulas, biological facts                        │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -86,7 +125,8 @@ nina/
 │   │   ├── regime.py       # Regime system (Section 10.1)
 │   │   ├── distortion.py   # Distortion metric (Section 10.2)
 │   │   ├── trust.py        # Trust lattice (Section 7)
-│   │   └── pipeline.py     # Compiler pipeline (Section 10.3)
+│   │   ├── pipeline.py     # Compiler pipeline (Section 10.3)
+│   │   └── knowledge.py    # ⚠️ Bridge to adan_portable KB
 │   └── sdk/
 │       └── nina_sdk.py     # Developer SDK
 │

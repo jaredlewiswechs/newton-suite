@@ -33,6 +33,32 @@ from .regime import Regime, RegimeType, get_regime_registry
 from .trust import TrustLabel, TrustLattice, Labeled, get_trust_lattice
 from .distortion import DistortionMetric, GeometryMismatchError, get_distortion_metric
 
+# Import Nina's knowledge integration (bridges to adan_portable)
+try:
+    from .knowledge import NinaKnowledge, get_nina_knowledge, NinaFact
+    HAS_NINA_KB = True
+except ImportError:
+    HAS_NINA_KB = False
+
+# Import adan_portable's query parser directly for shape recognition
+try:
+    from adan.query_parser import (
+        KinematicQueryParser, 
+        get_query_parser,
+        QueryShape as AdanQueryShape,
+        ParsedQuery as AdanParsedQuery,
+    )
+    HAS_ADAN_PARSER = True
+except ImportError:
+    HAS_ADAN_PARSER = False
+
+# Import Ollama fallback (governed LLM for queries KB can't answer)
+try:
+    from .ollama import NinaOllama, get_nina_ollama
+    HAS_OLLAMA = True
+except ImportError:
+    HAS_OLLAMA = False
+
 
 class PipelineStage(Enum):
     """The 9 stages of the compiler pipeline."""
@@ -216,8 +242,18 @@ class Pipeline:
         self._ledger: List[ProvenanceEntry] = []
         self._prev_hash = "0" * 64
         
-        # Knowledge base for fact resolution
-        self._knowledge_base: Dict[str, Any] = {
+        # Knowledge system - USE adan_portable KB, not a duplicate!
+        self._knowledge: Optional['NinaKnowledge'] = None
+        if HAS_NINA_KB:
+            self._knowledge = get_nina_knowledge()
+        
+        # Ollama fallback for queries KB can't answer (governed, local)
+        self._ollama: Optional['NinaOllama'] = None
+        if HAS_OLLAMA:
+            self._ollama = get_nina_ollama()
+        
+        # Fallback mini-KB only if adan_portable unavailable
+        self._fallback_kb: Dict[str, Any] = {
             "capital:france": "Paris",
             "capital:germany": "Berlin",
             "capital:japan": "Tokyo",
@@ -332,28 +368,64 @@ class Pipeline:
             )
     
     def _parse(self, input_text: str) -> ParsedQuery:
-        """Stage 2: Parse input into typed query shape."""
+        """
+        Stage 2: Parse input into typed query shape.
+        
+        USES ADAN'S KINEMATIC QUERY PARSER - not a duplicate implementation.
+        The parser recognizes 20+ query shapes with proper regex patterns.
+        """
+        # Use adan's parser if available (the REAL kinematic parser)
+        if HAS_ADAN_PARSER:
+            adan_parser = get_query_parser()
+            adan_parsed = adan_parser.parse(input_text)
+            
+            # Map adan QueryShape to Nina QueryShape
+            shape_map = {
+                AdanQueryShape.CAPITAL_OF: QueryShape.CAPITAL_OF,
+                AdanQueryShape.POPULATION_OF: QueryShape.POPULATION_OF,
+                AdanQueryShape.VERIFY_FACT: QueryShape.VERIFY_FACT,
+                AdanQueryShape.UNKNOWN: QueryShape.UNKNOWN,
+            }
+            
+            nina_shape = shape_map.get(adan_parsed.shape, QueryShape.UNKNOWN)
+            
+            # Build slots from adan's parsed data
+            slots = {}
+            if adan_parsed.slot:
+                # Map slot name based on shape
+                if nina_shape == QueryShape.CAPITAL_OF:
+                    slots["country"] = adan_parsed.slot
+                elif nina_shape == QueryShape.POPULATION_OF:
+                    slots["country"] = adan_parsed.slot
+                elif nina_shape == QueryShape.VERIFY_FACT:
+                    slots["statement"] = adan_parsed.slot
+                else:
+                    slots["raw"] = adan_parsed.slot
+            else:
+                slots["raw"] = input_text
+            
+            return ParsedQuery(
+                shape=nina_shape,
+                slots=slots,
+                raw_input=input_text,
+                confidence=adan_parsed.confidence
+            )
+        
+        # Minimal fallback only if adan parser unavailable
         text_lower = input_text.lower()
         
-        # Pattern matching for query shapes
-        patterns = [
-            (r"(?:what is the )?capital of (\w+)", QueryShape.CAPITAL_OF, "country"),
-            (r"(?:what is the )?population of (\w+)", QueryShape.POPULATION_OF, "country"),
-            (r"(?:is it true that |verify:? ?)(.+)", QueryShape.VERIFY_FACT, "statement"),
-            (r"(?:calculate |compute |what is )?([\d\+\-\*\/\(\)\s\.]+)", QueryShape.CALCULATE, "expression"),
-        ]
+        # Only handle calculation pattern (pure numbers/operators)
+        # Everything else goes to UNKNOWN for KB/Ollama handling
+        calc_match = re.match(r'^[\d\s\+\-\*\/\(\)\.]+$', text_lower.strip())
+        if calc_match:
+            return ParsedQuery(
+                shape=QueryShape.CALCULATE,
+                slots={"expression": text_lower.strip()},
+                raw_input=input_text,
+                confidence=0.9
+            )
         
-        for pattern, shape, slot_name in patterns:
-            match = re.search(pattern, text_lower)
-            if match:
-                return ParsedQuery(
-                    shape=shape,
-                    slots={slot_name: match.group(1).strip()},
-                    raw_input=input_text,
-                    confidence=0.9
-                )
-        
-        # Unknown shape - requires explicit upgrade
+        # Unknown shape - will be resolved by KB or Ollama
         return ParsedQuery(
             shape=QueryShape.UNKNOWN,
             slots={"raw": input_text},
@@ -362,20 +434,58 @@ class Pipeline:
         )
     
     def _abstract_interpret(self, parsed: ParsedQuery) -> Dict[str, Any]:
-        """Stage 3: Semantic field resolution via abstract interpretation."""
+        """
+        Stage 3: Semantic field resolution via abstract interpretation.
+        
+        Uses adan_portable's knowledge base when available for full
+        5-tier kinematic semantics.
+        """
         result = {
             "shape": parsed.shape,
             "resolved_slots": {},
             "semantic_field": None
         }
         
+        # Try adan_portable KB first (full 5-tier resolution)
+        if self._knowledge and self._knowledge.is_available:
+            if parsed.shape == QueryShape.CAPITAL_OF:
+                country = parsed.slots.get("country", "").lower()
+                capital = self._knowledge.get_capital(country)
+                if capital:
+                    result["resolved_slots"]["answer"] = capital
+                    result["semantic_field"] = "geography"
+                    result["source"] = "adan_knowledge_base"
+                    return result
+                    
+            elif parsed.shape == QueryShape.POPULATION_OF:
+                country = parsed.slots.get("country", "").lower()
+                pop_data = self._knowledge.get_population(country)
+                if pop_data:
+                    pop, year = pop_data
+                    result["resolved_slots"]["answer"] = pop
+                    result["resolved_slots"]["year"] = year
+                    result["semantic_field"] = "demographics"
+                    result["source"] = "adan_knowledge_base"
+                    return result
+            
+            # For unknown shapes, try full KB query
+            elif parsed.shape == QueryShape.UNKNOWN:
+                fact = self._knowledge.query(parsed.raw_input)
+                if fact:
+                    result["resolved_slots"]["answer"] = fact.value
+                    result["resolved_slots"]["fact_text"] = fact.fact_text
+                    result["semantic_field"] = fact.category
+                    result["source"] = f"adan_{fact.query_tier}"
+                    return result
+        
+        # Fallback to mini-KB if adan not available
         if parsed.shape == QueryShape.CAPITAL_OF:
             country = parsed.slots.get("country", "").lower()
             key = f"capital:{country}"
-            if key in self._knowledge_base:
-                result["resolved_slots"]["answer"] = self._knowledge_base[key]
+            if key in self._fallback_kb:
+                result["resolved_slots"]["answer"] = self._fallback_kb[key]
                 result["semantic_field"] = "geography"
-                result["source"] = "knowledge_base"
+                result["source"] = "fallback_kb"
             else:
                 result["resolved_slots"]["answer"] = None
                 result["source"] = "not_found"
@@ -383,10 +493,10 @@ class Pipeline:
         elif parsed.shape == QueryShape.POPULATION_OF:
             country = parsed.slots.get("country", "").lower()
             key = f"population:{country}"
-            if key in self._knowledge_base:
-                result["resolved_slots"]["answer"] = self._knowledge_base[key]
+            if key in self._fallback_kb:
+                result["resolved_slots"]["answer"] = self._fallback_kb[key]
                 result["semantic_field"] = "demographics"
-                result["source"] = "knowledge_base"
+                result["source"] = "fallback_kb"
             else:
                 result["resolved_slots"]["answer"] = None
                 result["source"] = "not_found"
@@ -404,6 +514,18 @@ class Pipeline:
         else:
             result["semantic_field"] = "unknown"
             result["source"] = "unresolved"
+        
+        # STAGE 3.5: OLLAMA FALLBACK
+        # If KB didn't find an answer for unknown queries, try Ollama
+        # Ollama is GOVERNED - runs locally, trust level VERIFIED (not TRUSTED)
+        if (result.get("source") == "unresolved" or result.get("resolved_slots", {}).get("answer") is None):
+            if self._ollama and parsed.shape == QueryShape.UNKNOWN:
+                ollama_response = self._ollama.generate(parsed.raw_input)
+                if ollama_response:
+                    result["resolved_slots"]["answer"] = ollama_response
+                    result["semantic_field"] = "ollama_generation"
+                    result["source"] = "ollama_governed"
+                    result["llm_model"] = self._ollama.config.model
         
         return result
     
@@ -435,9 +557,16 @@ class Pipeline:
         source = resolved.get("source", "unknown")
         
         # Label based on source
-        if source == "knowledge_base":
-            # Knowledge base is a trusted source
+        if source in ["adan_knowledge_base", "adan_store", "adan_shape", "adan_semantic", "adan_keyword"]:
+            # adan_portable KB is authoritative - TRUSTED
             return self.lattice.label(answer, TrustLabel.TRUSTED, source)
+        elif source == "fallback_kb":
+            # Fallback KB is verified but less authoritative
+            return self.lattice.label(answer, TrustLabel.VERIFIED, source)
+        elif source == "ollama_governed":
+            # Ollama is local and governed - VERIFIED level (not TRUSTED)
+            # "We govern Ollama" - it's controlled but not authoritative
+            return self.lattice.label(answer, TrustLabel.VERIFIED, source)
         elif source == "computation":
             # Computation is trusted (Newton verified)
             return self.lattice.label(
@@ -488,8 +617,23 @@ class Pipeline:
         """Simple statement verification against knowledge base."""
         statement_lower = statement.lower()
         
-        # Check for known facts
-        for key, value in self._knowledge_base.items():
+        # Try adan_portable KB first
+        if self._knowledge and self._knowledge.is_available:
+            # Check for capital facts
+            capital_match = re.search(r'(\w+) is the capital of (\w+)', statement_lower)
+            if capital_match:
+                city, country = capital_match.groups()
+                actual_capital = self._knowledge.get_capital(country)
+                if actual_capital and actual_capital.lower() == city.lower():
+                    return True
+            
+            # Try a general query
+            fact = self._knowledge.query(statement)
+            if fact and fact.confidence > 0.7:
+                return True
+        
+        # Fallback checks
+        for key, value in self._fallback_kb.items():
             if key.startswith("capital:"):
                 country = key.split(":")[1]
                 if country in statement_lower and str(value).lower() in statement_lower:

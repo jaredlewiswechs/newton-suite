@@ -102,13 +102,23 @@ class Regime:
     
     def _default_trusted_sources(self) -> Set[str]:
         """Default trusted sources based on regime type."""
+        # Base adan_portable sources - always trusted as authoritative
+        adan_sources = {
+            "adan_knowledge_base", 
+            "adan_store", 
+            "adan_shape", 
+            "adan_semantic", 
+            "adan_keyword",
+            "fallback_kb",
+        }
+        
         defaults = {
-            RegimeType.FACTUAL: {"knowledge_base", "verified_facts", "ledger"},
-            RegimeType.MATHEMATICAL: {"logic_engine", "proof_system"},
+            RegimeType.FACTUAL: {"knowledge_base", "verified_facts", "ledger", "computation"} | adan_sources,
+            RegimeType.MATHEMATICAL: {"logic_engine", "proof_system", "computation"} | adan_sources,
             RegimeType.CONVERSATIONAL: {"any"},
-            RegimeType.NAVIGATIONAL: {"physics_engine", "map_data"},
-            RegimeType.FINANCIAL: {"ledger", "bank_api"},
-            RegimeType.TEMPORAL: {"system_clock", "calendar"},
+            RegimeType.NAVIGATIONAL: {"physics_engine", "map_data"} | adan_sources,
+            RegimeType.FINANCIAL: {"ledger", "bank_api"} | adan_sources,
+            RegimeType.TEMPORAL: {"system_clock", "calendar"} | adan_sources,
             RegimeType.CUSTOM: set()
         }
         return defaults.get(self.regime_type, set())
