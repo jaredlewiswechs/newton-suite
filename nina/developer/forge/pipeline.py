@@ -655,7 +655,7 @@ class Pipeline:
         input_hash = hashlib.sha256(str(input_text).encode()).hexdigest()
         output_hash = hashlib.sha256(str(output).encode()).hexdigest()
         
-        # Compute entry hash
+        # Compute entry hash using full prev_hash
         entry_data = f"{index}|{timestamp}|{input_hash}|{output_hash}|{self._prev_hash}"
         entry_hash = hashlib.sha256(entry_data.encode()).hexdigest()
         
@@ -665,12 +665,12 @@ class Pipeline:
             operation="query",
             input_hash=input_hash[:16],
             output_hash=output_hash[:16],
-            prev_hash=self._prev_hash[:16],
-            entry_hash=entry_hash
+            prev_hash=self._prev_hash,  # Store FULL hash for chain verification
+            entry_hash=entry_hash        # Full hash
         )
         
         self._ledger.append(entry)
-        self._prev_hash = entry_hash
+        self._prev_hash = entry_hash  # Full hash for next entry
         
         return entry
     

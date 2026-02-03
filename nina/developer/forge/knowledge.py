@@ -207,32 +207,41 @@ class NinaKnowledge:
         
         return self._parser.parse(question)
     
+    def _normalize_country(self, country: str) -> str:
+        """Normalize country name for lookup."""
+        country_lower = country.lower().strip()
+        # Remove common prefixes that parser might capture
+        for prefix in ["the ", "a ", "an "]:
+            if country_lower.startswith(prefix):
+                country_lower = country_lower[len(prefix):]
+        return country_lower.strip()
+    
     def get_capital(self, country: str) -> Optional[str]:
         """Direct lookup: Get capital of a country."""
         if not HAS_KB:
             return None
-        country_lower = country.lower().strip()
+        country_lower = self._normalize_country(country)
         return COUNTRY_CAPITALS.get(country_lower)
     
     def get_population(self, country: str) -> Optional[Tuple[int, int]]:
         """Direct lookup: Get population of a country."""
         if not HAS_KB:
             return None
-        country_lower = country.lower().strip()
+        country_lower = self._normalize_country(country)
         return COUNTRY_POPULATIONS.get(country_lower)
     
     def get_language(self, country: str) -> Optional[List[str]]:
         """Direct lookup: Get languages of a country."""
         if not HAS_KB:
             return None
-        country_lower = country.lower().strip()
+        country_lower = self._normalize_country(country)
         return COUNTRY_LANGUAGES.get(country_lower)
     
     def get_currency(self, country: str) -> Optional[Tuple[str, str]]:
         """Direct lookup: Get currency of a country."""
         if not HAS_KB:
             return None
-        country_lower = country.lower().strip()
+        country_lower = self._normalize_country(country)
         return COUNTRY_CURRENCIES.get(country_lower)
     
     def get_constant(self, name: str) -> Optional[Dict[str, Any]]:
