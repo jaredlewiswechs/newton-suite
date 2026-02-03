@@ -13,6 +13,13 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 import re
 
+# Import language mechanics for typo correction and query normalization
+try:
+    from .language_mechanics import get_language_mechanics
+    HAS_LANGUAGE_MECHANICS = True
+except ImportError:
+    HAS_LANGUAGE_MECHANICS = False
+
 
 @dataclass
 class VerifiedFact:
@@ -197,8 +204,12 @@ SCIENTIFIC_CONSTANTS: Dict[str, tuple[float, str, str]] = {
     "gravitational constant": (6.67430e-11, "m³/(kg·s²)", "Gravitational constant"),
     "g": (9.80665, "m/s²", "Standard gravity"),
     "planck constant": (6.62607015e-34, "J·s", "Planck constant"),
+    "planck's constant": (6.62607015e-34, "J·s", "Planck constant"),
     "avogadro number": (6.02214076e23, "mol⁻¹", "Avogadro constant"),
+    "avogadro's number": (6.02214076e23, "mol⁻¹", "Avogadro constant"),
+    "avogadro constant": (6.02214076e23, "mol⁻¹", "Avogadro constant"),
     "boltzmann constant": (1.380649e-23, "J/K", "Boltzmann constant"),
+    "boltzmann's constant": (1.380649e-23, "J/K", "Boltzmann constant"),
     "electron mass": (9.1093837015e-31, "kg", "Electron mass"),
     "proton mass": (1.67262192369e-27, "kg", "Proton mass"),
     "elementary charge": (1.602176634e-19, "C", "Elementary charge"),
@@ -225,9 +236,15 @@ HISTORICAL_DATES: Dict[str, tuple[str, str]] = {
     "first iphone": ("2007", "Apple released the first iPhone on June 29, 2007"),
     "moon landing": ("1969", "Apollo 11 landed on the Moon on July 20, 1969"),
     "wwii ended": ("1945", "World War II ended September 2, 1945"),
+    "world war ii end": ("1945", "World War II ended September 2, 1945"),
+    "world war 2 end": ("1945", "World War II ended September 2, 1945"),
+    "ww2 ended": ("1945", "World War II ended September 2, 1945"),
     "wwi ended": ("1918", "World War I ended November 11, 1918"),
+    "world war i end": ("1918", "World War I ended November 11, 1918"),
     "declaration of independence": ("1776", "US Declaration of Independence signed July 4, 1776"),
     "french revolution": ("1789", "French Revolution began July 14, 1789"),
+    "berlin wall fall": ("1989", "Berlin Wall fell on November 9, 1989"),
+    "berlin wall fell": ("1989", "Berlin Wall fell on November 9, 1989"),
 }
 
 
@@ -303,6 +320,9 @@ class KnowledgeBase:
     def __init__(self):
         self.queries = 0
         self.hits = 0
+        self.typo_corrections = 0
+        # Initialize language mechanics if available
+        self._lm = get_language_mechanics() if HAS_LANGUAGE_MECHANICS else None
     
     def query(self, question: str) -> Optional[VerifiedFact]:
         """
@@ -311,6 +331,15 @@ class KnowledgeBase:
         """
         self.queries += 1
         question_lower = question.lower().strip()
+        
+        # Apply typo correction and normalization if available
+        if self._lm:
+            corrected, corrections = self._lm.correct_typos(question_lower)
+            if corrections:
+                self.typo_corrections += len(corrections)
+                question_lower = corrected
+            # Normalize the query (e.g., "founder of X" → "who founded X")
+            question_lower = self._lm.normalize_query(question_lower)
         
         # Try each category
         result = (
@@ -424,7 +453,7 @@ class KnowledgeBase:
     def _query_scientific(self, question: str) -> Optional[VerifiedFact]:
         """Query for scientific constants."""
         # Only match if specifically asking about constants/values
-        if not any(word in question for word in ["constant", "value of", "what is pi", "what is e", "speed of light", "gravity"]):
+        if not any(word in question for word in ["constant", "value of", "what is pi", "what is e", "speed of light", "gravity", "number", "planck", "avogadro", "boltzmann"]):
             return None
             
         for const_name, (value, unit, desc) in SCIENTIFIC_CONSTANTS.items():
@@ -468,15 +497,8 @@ class KnowledgeBase:
         """Query for company facts."""
         for company, facts in COMPANY_FACTS.items():
             if company in question:
-                if "founded" in question or "when" in question or "created" in question:
-                    return VerifiedFact(
-                        fact=f"{company.title()} was founded in {facts['founded']}.",
-                        category="business",
-                        source="Company records",
-                        source_url=f"https://en.wikipedia.org/wiki/{company.title()}",
-                        confidence=1.0,
-                    )
-                if "founder" in question or "who" in question:
+                # WHO questions - founders (check FIRST, before "when/founded")
+                if "who" in question or "founder" in question:
                     founders = ", ".join(facts.get("founders", ["Unknown"]))
                     return VerifiedFact(
                         fact=f"{company.title()} was founded by {founders}.",
@@ -485,6 +507,16 @@ class KnowledgeBase:
                         source_url=f"https://en.wikipedia.org/wiki/{company.title()}",
                         confidence=1.0,
                     )
+                # WHEN questions - founding year
+                if "founded" in question or "when" in question or "created" in question or "year" in question:
+                    return VerifiedFact(
+                        fact=f"{company.title()} was founded in {facts['founded']}.",
+                        category="business",
+                        source="Company records",
+                        source_url=f"https://en.wikipedia.org/wiki/{company.title()}",
+                        confidence=1.0,
+                    )
+                # WHERE questions - headquarters
                 if "headquarters" in question or "located" in question or "where" in question:
                     return VerifiedFact(
                         fact=f"{company.title()} is headquartered in {facts.get('headquarters', 'Unknown')}.",
@@ -522,6 +554,7 @@ class KnowledgeBase:
             "queries": self.queries,
             "hits": self.hits,
             "hit_rate": self.hits / max(1, self.queries),
+            "typo_corrections": self.typo_corrections,
         }
 
 

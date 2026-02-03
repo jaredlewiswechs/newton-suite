@@ -33,6 +33,12 @@ from .trajectory_verifier import (
     get_trajectory_verifier,
     get_trajectory_composer,
 )
+from .language_mechanics import (
+    LanguageMechanics,
+    get_language_mechanics,
+    SYNONYM_GROUPS,
+    ANTONYMS,
+)
 
 __all__ = [
     "NewtonAgent",
@@ -62,4 +68,9 @@ __all__ = [
     "CompositionState",
     "get_trajectory_verifier",
     "get_trajectory_composer",
+    # Language Mechanics
+    "LanguageMechanics",
+    "get_language_mechanics",
+    "SYNONYM_GROUPS",
+    "ANTONYMS",
 ]

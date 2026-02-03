@@ -24,6 +24,7 @@ import time
 import hashlib
 import re
 import json
+from datetime import datetime
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Any, Callable
 from enum import Enum
@@ -335,14 +336,30 @@ class NewtonAgent:
             return f"{fact.fact}\n\n📚 *Source: {fact.source}*"
         return None
     
+    def _get_datetime_context(self) -> str:
+        """Get current date/time context for the model."""
+        now = datetime.now()
+        return (
+            f"Current date: {now.strftime('%A, %B %d, %Y')}\n"
+            f"Current time: {now.strftime('%I:%M %p %Z').strip()}\n"
+            f"Timestamp: {now.isoformat()}"
+        )
+    
     def _generate_response(self, user_input: str, context: List[Dict]) -> str:
         """Generate response using LLM (knowledge base is checked separately)."""
-        # Use LLM
+        # Use LLM with datetime context
         if self.response_generator:
-            return self.response_generator(user_input, context)
+            # Inject current datetime as system context
+            datetime_context = self._get_datetime_context()
+            enriched_context = [
+                {"role": "system", "content": f"[CURRENT TIME]\n{datetime_context}"},
+                *context
+            ]
+            return self.response_generator(user_input, enriched_context)
         
         # Default: echo with verification note
-        return f"I received your message: '{user_input}'. (Note: No LLM backend configured - using echo mode)"
+        now = datetime.now()
+        return f"I received your message: '{user_input}'. (Note: No LLM backend configured - using echo mode. Current time: {now.strftime('%Y-%m-%d %H:%M')})"
     
     def _generate_refusal(self, failed_constraints: List[str]) -> str:
         """Generate a refusal message for constraint violations."""
