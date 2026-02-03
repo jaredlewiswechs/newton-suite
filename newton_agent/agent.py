@@ -626,7 +626,8 @@ class NewtonAgent:
                 turn_hash=response_turn.hash,
             )
         
-        # 5. Generate response (identity first, then knowledge base, mesh, math, LLM)
+        # 5. Generate response (identity first, then MATH, then knowledge base, mesh, LLM)
+        # Math goes before KB because KB embeddings can give false positives on numbers
         context = self.memory.get_context(max_turns=10)
         
         # Check if this is an identity question (Newton knows himself)
@@ -637,10 +638,19 @@ class NewtonAgent:
             is_identity_response = identity_answer is not None
         operations += 1
         
+        # Check if this is a math question FIRST (use TI Calculator + Logic Engine)
+        # This must come before KB because KB embeddings match "7 * 8" to "element 8"
+        math_answer = None
+        is_math_response = False
+        if not is_identity_response and _ti_calculator:
+            math_answer = self._try_math_evaluation(user_input)
+            is_math_response = math_answer is not None
+        operations += 1
+        
         # Check knowledge base (already verified)
         kb_answer = None
         is_kb_response = False
-        if not is_identity_response:
+        if not is_identity_response and not is_math_response:
             kb_answer = self._try_knowledge_base(user_input)
             is_kb_response = kb_answer is not None
         operations += 1
@@ -648,31 +658,23 @@ class NewtonAgent:
         # Check knowledge mesh for expanded data
         mesh_answer = None
         is_mesh_response = False
-        if not is_identity_response and not is_kb_response and _knowledge_mesh:
+        if not is_identity_response and not is_math_response and not is_kb_response and _knowledge_mesh:
             mesh_answer = self._try_knowledge_mesh(user_input)
             is_mesh_response = mesh_answer is not None
-        operations += 1
-        
-        # Check if this is a math question (use Logic Engine)
-        math_answer = None
-        is_math_response = False
-        if not is_identity_response and not is_kb_response and not is_mesh_response:
-            math_answer = self._try_math_evaluation(user_input)
-            is_math_response = math_answer is not None
         operations += 1
         
         if is_identity_response:
             response_content = identity_answer
             response_source = "identity"
+        elif is_math_response:
+            response_content = math_answer
+            response_source = "logic_engine"
         elif is_kb_response:
             response_content = kb_answer
             response_source = "knowledge_base"
         elif is_mesh_response:
             response_content = mesh_answer
             response_source = "knowledge_mesh"
-        elif is_math_response:
-            response_content = math_answer
-            response_source = "logic_engine"
         else:
             response_content = self._generate_response(user_input, context)
             response_source = "llm"
