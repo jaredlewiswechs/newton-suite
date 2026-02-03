@@ -139,6 +139,15 @@ class SensePattern:
         (r"(fact|proven).*(believe|think|seem)", "fact_opinion_blend"),
     ]
     
+    # Patterns of EXCESSIVE certainty (red flag - nothing is 100% in unverified content)
+    EXCESSIVE_CERTAINTY_MARKERS = [
+        (r"100%\s*(certain|sure|confident|guaranteed)", "excessive_certainty"),
+        (r"(absolutely|definitely|certainly)\s+(true|correct|right|certain)", "overconfidence"),
+        (r"(always|never).*(always|never)", "absolute_stacking"),
+        (r"\b(undoubtedly|unquestionably|indisputably)\b", "excessive_confidence"),
+        (r"(every|all|none|no one).*(always|never|ever)", "universal_absolute"),
+    ]
+    
     # Patterns that smell like temporal issues
     TEMPORAL_MARKERS = [
         (r"will.*was", "tense_inconsistency"),
@@ -164,6 +173,7 @@ class SensePattern:
         all_patterns = (
             cls.CONTRADICTION_MARKERS +
             cls.FALSE_CERTAINTY_MARKERS +
+            cls.EXCESSIVE_CERTAINTY_MARKERS +
             cls.TEMPORAL_MARKERS +
             cls.SOURCE_MARKERS
         )
