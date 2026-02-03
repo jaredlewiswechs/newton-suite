@@ -7,6 +7,10 @@ Pre-verified facts from authoritative sources (CIA World Factbook, etc.)
 
 These facts are considered GROUND TRUTH - no LLM needed.
 Source: CIA World Factbook, ISO standards, official government data.
+
+Search Strategy:
+1. FAST: Keyword matching (~1ms) - exact matches
+2. SEMANTIC: Embedding fallback (~100ms) - natural language understanding
 """
 
 from dataclasses import dataclass
@@ -19,6 +23,13 @@ try:
     HAS_LANGUAGE_MECHANICS = True
 except ImportError:
     HAS_LANGUAGE_MECHANICS = False
+
+# Import embeddings for semantic search fallback
+try:
+    from .embeddings import get_embedding_engine, SemanticMatch
+    HAS_EMBEDDINGS = True
+except ImportError:
+    HAS_EMBEDDINGS = False
 
 
 @dataclass
@@ -661,22 +672,92 @@ class KnowledgeBase:
     """
     Pre-verified knowledge base for instant fact retrieval.
     No LLM needed for known facts.
+    
+    Search Strategy:
+    1. FAST: Keyword matching (~1ms)
+    2. SEMANTIC: Embedding fallback (~100ms) for natural language
     """
     
     CIA_FACTBOOK_URL = "https://www.cia.gov/the-world-factbook/"
     NIST_URL = "https://www.nist.gov/pml/fundamental-physical-constants"
     
-    def __init__(self):
+    def __init__(self, enable_embeddings: bool = True):
         self.queries = 0
         self.hits = 0
+        self.keyword_hits = 0
+        self.semantic_hits = 0
         self.typo_corrections = 0
         # Initialize language mechanics if available
         self._lm = get_language_mechanics() if HAS_LANGUAGE_MECHANICS else None
+        # Initialize embedding engine if available
+        self._embeddings = None
+        self._embeddings_indexed = False
+        self._enable_embeddings = enable_embeddings and HAS_EMBEDDINGS
+    
+    def _ensure_embeddings_indexed(self):
+        """Lazy-load and index facts for semantic search."""
+        if not self._enable_embeddings or self._embeddings_indexed:
+            return
+        
+        try:
+            self._embeddings = get_embedding_engine()
+            if self._embeddings.is_available():
+                # Build searchable facts from our data
+                facts_to_index = self._build_searchable_facts()
+                self._embeddings.index_facts(facts_to_index)
+                self._embeddings_indexed = True
+        except Exception:
+            self._embeddings = None
+    
+    def _build_searchable_facts(self) -> Dict[str, str]:
+        """Build dictionary of searchable facts for embedding."""
+        facts = {}
+        
+        # Capitals
+        for country, capital in COUNTRY_CAPITALS.items():
+            facts[f"capital_{country}"] = f"The capital of {country.title()} is {capital}."
+        
+        # Scientific constants
+        for const, (value, unit, desc) in SCIENTIFIC_CONSTANTS.items():
+            if unit:
+                facts[f"science_{const}"] = f"{desc}: {value} {unit}"
+            else:
+                facts[f"science_{const}"] = f"{desc}: {value}"
+        
+        # Historical dates
+        for event, (date, desc) in HISTORICAL_DATES.items():
+            facts[f"history_{event}"] = f"{desc} ({date})."
+        
+        # Acronyms
+        for acronym, (expansion, desc) in ACRONYMS.items():
+            facts[f"acronym_{acronym}"] = f"{acronym.upper()} stands for {expansion}. {desc}."
+        
+        # Biology
+        for topic, (fact, description) in BIOLOGY_FACTS.items():
+            facts[f"biology_{topic}"] = f"{fact}. {description}"
+        
+        # Physics
+        for law, (statement, formula) in PHYSICS_LAWS.items():
+            facts[f"physics_{law}"] = f"{statement}. {formula}" if formula else statement
+        
+        # Elements
+        for element, (symbol, num, mass, category) in PERIODIC_TABLE.items():
+            facts[f"element_{element}"] = f"{element.title()} ({symbol}) is element {num} with atomic mass {mass}. It is a {category}."
+        
+        # Chemical notation
+        for formula, explanation in CHEMICAL_NOTATION.items():
+            facts[f"notation_{formula}"] = explanation
+        
+        return facts
     
     def query(self, question: str) -> Optional[VerifiedFact]:
         """
         Query the knowledge base for a verified fact.
         Returns None if fact not found.
+        
+        Strategy:
+        1. Try fast keyword matching first
+        2. Fall back to semantic search if no keyword match
         """
         self.queries += 1
         question_lower = question.lower().strip()
@@ -690,7 +771,7 @@ class KnowledgeBase:
             # Normalize the query (e.g., "founder of X" → "who founded X")
             question_lower = self._lm.normalize_query(question_lower)
         
-        # Try each category
+        # PHASE 1: Fast keyword matching (~1ms)
         result = (
             self._query_capital(question_lower) or
             self._query_geographic_misconception(question_lower) or
@@ -713,8 +794,43 @@ class KnowledgeBase:
         
         if result:
             self.hits += 1
+            self.keyword_hits += 1
+            return result
+        
+        # PHASE 2: Semantic search fallback (~100ms)
+        result = self._query_semantic(question_lower)
+        if result:
+            self.hits += 1
+            self.semantic_hits += 1
         
         return result
+    
+    def _query_semantic(self, question: str) -> Optional[VerifiedFact]:
+        """
+        Semantic search fallback using embeddings.
+        Only called when keyword matching fails.
+        """
+        if not self._enable_embeddings:
+            return None
+        
+        # Lazy-load embeddings on first semantic query
+        self._ensure_embeddings_indexed()
+        
+        if not self._embeddings or not self._embeddings.is_available():
+            return None
+        
+        match = self._embeddings.find_best_match(question)
+        if not match:
+            return None
+        
+        # Return fact with similarity score in confidence
+        return VerifiedFact(
+            fact=match.text,
+            category="semantic_match",
+            source="Knowledge Base (Semantic)",
+            source_url="",
+            confidence=match.similarity,  # Similarity score as confidence
+        )
     
     def _extract_country(self, text: str) -> Optional[str]:
         """Extract country name from question."""
@@ -1172,12 +1288,22 @@ class KnowledgeBase:
         return None
     
     def get_stats(self) -> Dict:
-        return {
+        stats = {
             "queries": self.queries,
             "hits": self.hits,
             "hit_rate": self.hits / max(1, self.queries),
+            "keyword_hits": self.keyword_hits,
+            "semantic_hits": self.semantic_hits,
             "typo_corrections": self.typo_corrections,
+            "embeddings_enabled": self._enable_embeddings,
+            "embeddings_indexed": self._embeddings_indexed,
         }
+        
+        # Add embedding engine stats if available
+        if self._embeddings and self._embeddings_indexed:
+            stats["embedding_stats"] = self._embeddings.get_stats()
+        
+        return stats
 
 
 # Global instance
