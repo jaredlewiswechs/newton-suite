@@ -483,14 +483,25 @@ class KnowledgeBase:
     def _query_historical(self, question: str) -> Optional[VerifiedFact]:
         """Query for historical dates."""
         for event, (date, desc) in HISTORICAL_DATES.items():
-            if event in question or all(word in question for word in event.split()):
-                return VerifiedFact(
-                    fact=f"{desc} ({date}).",
-                    category="history",
-                    source="Encyclopedia Britannica",
-                    source_url="https://www.britannica.com/",
-                    confidence=1.0,
-                )
+            # Use word boundary check to avoid false matches (e.g., "c created" matching "rust created")
+            words = event.split()
+            if len(words) == 1:
+                # Single word events need word boundary
+                pattern = r'\b' + re.escape(event) + r'\b'
+                if not re.search(pattern, question):
+                    continue
+            else:
+                # Multi-word events: all words must be present
+                if not all(re.search(r'\b' + re.escape(word) + r'\b', question) for word in words):
+                    continue
+            
+            return VerifiedFact(
+                fact=f"{desc} ({date}).",
+                category="history",
+                source="Encyclopedia Britannica",
+                source_url="https://www.britannica.com/",
+                confidence=1.0,
+            )
         return None
     
     def _query_company(self, question: str) -> Optional[VerifiedFact]:

@@ -34,6 +34,25 @@ from .memory import AgentMemory, ConversationTurn, TurnRole, ConstraintCheck, Gr
 from .knowledge_base import get_knowledge_base, VerifiedFact
 from .trajectory_verifier import get_trajectory_verifier, TrajectoryVerification
 
+# Import new components: Ada (sentinel), Meta Newton (self-verifier), Knowledge Mesh
+try:
+    from .ada import get_ada, Ada, Whisper, AlertLevel
+    _ada = get_ada()
+except ImportError:
+    _ada = None
+
+try:
+    from .meta_newton import get_meta_newton, MetaNewton, MetaVerification
+    _meta = get_meta_newton()
+except ImportError:
+    _meta = None
+
+try:
+    from .knowledge_sources import get_knowledge_mesh, KnowledgeMesh
+    _knowledge_mesh = get_knowledge_mesh()
+except ImportError:
+    _knowledge_mesh = None
+
 # Import Logic Engine for math evaluation
 try:
     from core.logic import LogicEngine, ExecutionBounds
@@ -343,6 +362,72 @@ class NewtonAgent:
             return f"{fact.fact}\n\n📚 *Source: {fact.source}*"
         return None
     
+    def _try_knowledge_mesh(self, user_input: str) -> Optional[str]:
+        """Try to answer from the expanded knowledge mesh."""
+        if not _knowledge_mesh:
+            return None
+        
+        result = _knowledge_mesh.query(user_input)
+        if result:
+            # Format the response based on the data
+            value = result.value
+            
+            if isinstance(value, dict):
+                # Format dict-style facts
+                if "type" in value and value["type"] == "planet":
+                    return (
+                        f"**{result.key.split(':')[1].title()}** ({value['type']})\n"
+                        f"• Mass: {value.get('mass_kg', 'N/A')} kg\n"
+                        f"• Radius: {value.get('radius_km', 'N/A')} km\n"
+                        f"• Orbital period: {value.get('orbital_period_days', 'N/A')} days\n\n"
+                        f"🌐 *Source: {result.primary_source.upper()}*"
+                    )
+                elif "height_m" in value:
+                    return (
+                        f"**{result.key.split(':')[1].replace('_', ' ').title()}**: "
+                        f"{value['height_m']:,} meters ({value['height_m'] * 3.281:.0f} ft)\n"
+                        f"Location: {value.get('location', 'N/A')}\n\n"
+                        f"🏔️ *Source: {result.primary_source.upper()}*"
+                    )
+                elif "depth_m" in value:
+                    return (
+                        f"**{result.key.split(':')[1].replace('_', ' ').title()}**: "
+                        f"{value['depth_m']:,} meters deep\n"
+                        f"Location: {value.get('location', 'N/A')}\n\n"
+                        f"🌊 *Source: {result.primary_source.upper()}*"
+                    )
+                elif "created" in value and "creator" in value:
+                    return (
+                        f"**{result.key.split(':')[1].title()}** was created in "
+                        f"{value['created']} by {value['creator']}.\n"
+                        f"Type: {value.get('typing', 'N/A')} typing\n\n"
+                        f"💻 *Source: {result.primary_source.title()}*"
+                    )
+                elif "symbol" in value and "atomic_number" in value:
+                    return (
+                        f"**{result.key.split(':')[1].title()}** ({value['symbol']})\n"
+                        f"• Atomic number: {value['atomic_number']}\n"
+                        f"• Atomic mass: {value['atomic_mass']}\n\n"
+                        f"⚛️ *Source: {result.primary_source.upper()}*"
+                    )
+                elif "value" in value and "unit" in value:
+                    return (
+                        f"**{result.key.split(':')[1].replace('_', ' ').title()}**: "
+                        f"{value['value']:,.2f} {value['unit']} ({value.get('year', 'latest')})\n\n"
+                        f"📊 *Source: {result.primary_source.title()}*"
+                    )
+                elif "value" in value and "symbol" in value:
+                    return (
+                        f"**{value.get('name', result.key.split(':')[1]).title()}** ({value['symbol']}): "
+                        f"{value['value']}\n\n"
+                        f"🔢 *Source: {result.primary_source.upper()}*"
+                    )
+            
+            # Fallback for other formats
+            return f"{result.key}: {result.value}\n\n*Source: {result.primary_source}*"
+        
+        return None
+
     def _try_math_evaluation(self, user_input: str) -> Optional[str]:
         """Try to evaluate math expressions using the Logic Engine."""
         if not _logic_engine:
@@ -438,27 +523,43 @@ class NewtonAgent:
         Process user input through the full verification pipeline.
         
         Pipeline:
-        1. Log user input
-        2. Check safety constraints
-        3. If blocked → refuse
-        4. Generate response
-        5. Ground factual claims in response
-        6. Log response with metadata
-        7. Return verified response
+        1. Ada senses the input (intuitive check)
+        2. Log user input
+        3. Check safety constraints
+        4. If blocked → refuse
+        5. Generate response (KB → Mesh → Math → LLM)
+        6. Ada watches the response
+        7. Ground factual claims in response
+        8. Meta Newton verifies the pipeline
+        9. Log response with metadata
+        10. Return verified response
         """
         start_time = time.time()
         self.total_requests += 1
         
-        # 1. Log user input
+        # Track operations for Meta Newton
+        operations = 0
+        ada_whispers = []
+        
+        # 1. Ada senses the input (quick intuitive check)
+        if _ada:
+            input_whisper = _ada.sense(user_input)
+            if input_whisper and input_whisper.level in [AlertLevel.ALERT, AlertLevel.ALARM]:
+                ada_whispers.append(input_whisper)
+        operations += 1
+        
+        # 2. Log user input
         user_turn = self.memory.add_turn(
             role=TurnRole.USER,
             content=user_input,
         )
+        operations += 1
         
-        # 2. Check safety constraints on user input
+        # 3. Check safety constraints on user input
         passed, failed = self._check_constraints(user_input)
+        operations += 1
         
-        # 3. If constraints violated → refuse
+        # 4. If constraints violated → refuse
         if failed:
             self.blocked_requests += 1
             refusal = self._generate_refusal(failed)
@@ -485,35 +586,65 @@ class NewtonAgent:
                 turn_hash=response_turn.hash,
             )
         
-        # 4. Generate response (knowledge base first, then math, then LLM)
+        # 5. Generate response (knowledge base first, then mesh, then math, then LLM)
         context = self.memory.get_context(max_turns=10)
         
-        # Check if this is a knowledge base answer (already verified)
+        # Check knowledge base (already verified)
         kb_answer = self._try_knowledge_base(user_input)
         is_kb_response = kb_answer is not None
+        operations += 1
+        
+        # Check knowledge mesh for expanded data
+        mesh_answer = None
+        is_mesh_response = False
+        if not is_kb_response and _knowledge_mesh:
+            mesh_answer = self._try_knowledge_mesh(user_input)
+            is_mesh_response = mesh_answer is not None
+        operations += 1
         
         # Check if this is a math question (use Logic Engine)
         math_answer = None
         is_math_response = False
-        if not is_kb_response:
+        if not is_kb_response and not is_mesh_response:
             math_answer = self._try_math_evaluation(user_input)
             is_math_response = math_answer is not None
+        operations += 1
         
         if is_kb_response:
             response_content = kb_answer
+            response_source = "knowledge_base"
+        elif is_mesh_response:
+            response_content = mesh_answer
+            response_source = "knowledge_mesh"
         elif is_math_response:
             response_content = math_answer
+            response_source = "logic_engine"
         else:
             response_content = self._generate_response(user_input, context)
+            response_source = "llm"
+        operations += 1
         
-        # 5. Check constraints on response (self-check)
+        # 6. Ada watches the response
+        if _ada:
+            response_whisper = _ada.watch_response(
+                query=user_input,
+                response=response_content,
+                verified=is_kb_response or is_mesh_response or is_math_response,
+                sources=[response_source]
+            )
+            if response_whisper and response_whisper.level in [AlertLevel.ALERT, AlertLevel.ALARM]:
+                ada_whispers.append(response_whisper)
+        operations += 1
+        
+        # 7. Check constraints on response (self-check)
         response_passed, response_failed = self._check_constraints(response_content)
+        operations += 1
         
-        # 6. Ground factual claims in response (skip for KB/math answers - already verified)
+        # 8. Ground factual claims in response (skip for KB/mesh/math - already verified)
         grounding_results = []
         unverified_claims = []
         
-        if self.config.enable_grounding and not is_kb_response and not is_math_response:
+        if self.config.enable_grounding and not is_kb_response and not is_mesh_response and not is_math_response:
             claims = self._extract_claims(response_content)
             if claims:
                 grounding_results, unverified_claims = self._ground_claims(claims)
@@ -524,11 +655,33 @@ class NewtonAgent:
                         f"\n\n⚠️ **Note**: The following claims could not be fully verified "
                         f"against official sources: {', '.join(unverified_claims[:2])}..."
                     )
+        operations += 1
         
-        # KB and math answers are always verified
-        is_verified = is_kb_response or is_math_response or (len(response_failed) == 0 and len(unverified_claims) == 0)
+        # 9. Meta Newton verifies the pipeline
+        elapsed_ms = int((time.time() - start_time) * 1000)
+        meta_verified = True
         
-        # 7. Log response with full metadata
+        if _meta:
+            meta_context = {
+                "iterations": operations,
+                "max_iterations": 1000,
+                "elapsed_ms": elapsed_ms,
+                "max_time_ms": 30000,
+                "meta_depth": 0,
+            }
+            meta_result = _meta.quick_check(meta_context)
+            meta_verified = meta_result[0]
+        
+        # KB, mesh, and math answers are always verified
+        is_verified = (is_kb_response or is_mesh_response or is_math_response or 
+                      (len(response_failed) == 0 and len(unverified_claims) == 0)) and meta_verified
+        
+        # Add Ada warnings if any
+        if ada_whispers and not is_kb_response and not is_mesh_response:
+            warning_count = len(ada_whispers)
+            response_content += f"\n\n🐕 *Ada detected {warning_count} potential issue(s) - review recommended*"
+        
+        # 10. Log response with full metadata
         response_turn = self.memory.add_turn(
             role=TurnRole.ASSISTANT,
             content=response_content,
@@ -541,7 +694,7 @@ class NewtonAgent:
             action="respond",
         )
         
-        # 8. Build and return response
+        # 11. Build and return response
         return AgentResponse(
             content=response_content,
             action_type=ActionType.RESPOND,
