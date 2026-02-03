@@ -99,6 +99,10 @@ class ModelRequest(BaseModel):
     model: str
 
 
+class CalculateRequest(BaseModel):
+    expression: str
+
+
 class TrajectoryRequest(BaseModel):
     text: str
 
@@ -247,6 +251,37 @@ async def get_stats() -> Dict:
         **agent.get_stats(),
         "grounding_stats": agent.grounding.get_stats(),
     }
+
+
+@app.post("/calculate")
+async def calculate(request: CalculateRequest) -> Dict:
+    """
+    Evaluate a math expression using Newton's Logic Engine.
+    
+    Supports:
+    - Basic operations: +, -, *, /, ^
+    - Functions: sqrt, sin, cos, tan, log, abs, floor, ceil
+    - Constants: pi, e
+    - Factorial: 5!
+    """
+    from newton_agent.ti_calculator import TICalculatorEngine
+    
+    calc = TICalculatorEngine()
+    try:
+        result, meta = calc.calculate(request.expression)
+        return {
+            "result": result,
+            "expression": request.expression,
+            "verified": meta.get("verified", True),
+            "source": meta.get("source", "LOGIC"),
+        }
+    except Exception as e:
+        return {
+            "result": None,
+            "expression": request.expression,
+            "error": str(e),
+            "verified": False,
+        }
 
 
 @app.post("/clear")

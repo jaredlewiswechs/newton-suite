@@ -292,6 +292,251 @@ ACRONYMS: Dict[str, tuple[str, str]] = {
     "cia": ("Central Intelligence Agency", "US intelligence agency"),
     "nist": ("National Institute of Standards and Technology", "US standards agency"),
     "iso": ("International Organization for Standardization", "International standards body"),
+    # Biology
+    "dna": ("Deoxyribonucleic Acid", "Molecule carrying genetic instructions"),
+    "rna": ("Ribonucleic Acid", "Molecule essential for gene expression"),
+    "atp": ("Adenosine Triphosphate", "Energy currency of cells"),
+    "mrna": ("Messenger RNA", "Carries genetic info from DNA to ribosomes"),
+    # Math/Science
+    "si": ("International System of Units", "Modern metric system"),
+    "mit": ("Massachusetts Institute of Technology", "Research university"),
+    "ieee": ("Institute of Electrical and Electronics Engineers", "Professional association"),
+    "stem": ("Science, Technology, Engineering, Mathematics", "Academic disciplines"),
+    # Economics
+    "gdp": ("Gross Domestic Product", "Total value of goods/services produced"),
+    "gnp": ("Gross National Product", "Total value produced by residents"),
+    "imf": ("International Monetary Fund", "International financial institution"),
+    # Medical
+    "cpr": ("Cardiopulmonary Resuscitation", "Emergency life-saving procedure"),
+    "mri": ("Magnetic Resonance Imaging", "Medical imaging technique"),
+    "ct": ("Computed Tomography", "Medical imaging using X-rays"),
+    "ekg": ("Electrocardiogram", "Test measuring heart electrical activity"),
+    "ecg": ("Electrocardiogram", "Test measuring heart electrical activity"),
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PERIODIC TABLE - ELEMENTS (Foundational Chemistry)
+# Source: IUPAC Periodic Table
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Element: (symbol, atomic_number, atomic_mass, category)
+PERIODIC_TABLE: Dict[str, tuple[str, int, float, str]] = {
+    "hydrogen": ("H", 1, 1.008, "nonmetal"),
+    "helium": ("He", 2, 4.003, "noble gas"),
+    "lithium": ("Li", 3, 6.941, "alkali metal"),
+    "beryllium": ("Be", 4, 9.012, "alkaline earth metal"),
+    "boron": ("B", 5, 10.81, "metalloid"),
+    "carbon": ("C", 6, 12.01, "nonmetal"),
+    "nitrogen": ("N", 7, 14.01, "nonmetal"),
+    "oxygen": ("O", 8, 16.00, "nonmetal"),
+    "fluorine": ("F", 9, 19.00, "halogen"),
+    "neon": ("Ne", 10, 20.18, "noble gas"),
+    "sodium": ("Na", 11, 22.99, "alkali metal"),
+    "magnesium": ("Mg", 12, 24.31, "alkaline earth metal"),
+    "aluminum": ("Al", 13, 26.98, "post-transition metal"),
+    "silicon": ("Si", 14, 28.09, "metalloid"),
+    "phosphorus": ("P", 15, 30.97, "nonmetal"),
+    "sulfur": ("S", 16, 32.07, "nonmetal"),
+    "chlorine": ("Cl", 17, 35.45, "halogen"),
+    "argon": ("Ar", 18, 39.95, "noble gas"),
+    "potassium": ("K", 19, 39.10, "alkali metal"),
+    "calcium": ("Ca", 20, 40.08, "alkaline earth metal"),
+    "iron": ("Fe", 26, 55.85, "transition metal"),
+    "copper": ("Cu", 29, 63.55, "transition metal"),
+    "zinc": ("Zn", 30, 65.38, "transition metal"),
+    "silver": ("Ag", 47, 107.87, "transition metal"),
+    "gold": ("Au", 79, 196.97, "transition metal"),
+    "mercury": ("Hg", 80, 200.59, "transition metal"),
+    "lead": ("Pb", 82, 207.2, "post-transition metal"),
+    "uranium": ("U", 92, 238.03, "actinide"),
+}
+
+# Symbol to element name (reverse lookup)
+ELEMENT_SYMBOLS: Dict[str, str] = {v[0].lower(): k for k, v in PERIODIC_TABLE.items()}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHEMISTRY NOTATION - How to read chemical formulas
+# Source: IUPAC nomenclature
+# ═══════════════════════════════════════════════════════════════════════════════
+
+CHEMICAL_NOTATION: Dict[str, str] = {
+    # Subscript meanings
+    "subscript": "Number after element symbol indicates atom count. H₂O = 2 hydrogen, 1 oxygen",
+    "coefficient": "Number before formula indicates molecules. 2H₂O = 2 molecules of water",
+    "parentheses": "Group atoms together. Ca(OH)₂ = 1 calcium, 2 oxygen, 2 hydrogen",
+    # Common patterns
+    "h2o": "H₂O = 2 Hydrogen atoms + 1 Oxygen atom = Water",
+    "co2": "CO₂ = 1 Carbon atom + 2 Oxygen atoms = Carbon Dioxide",
+    "nacl": "NaCl = 1 Sodium atom + 1 Chlorine atom = Salt",
+    "ch4": "CH₄ = 1 Carbon atom + 4 Hydrogen atoms = Methane",
+    "o2": "O₂ = 2 Oxygen atoms bonded = Molecular Oxygen (what we breathe)",
+    "h2so4": "H₂SO₄ = 2 Hydrogen + 1 Sulfur + 4 Oxygen = Sulfuric Acid",
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# BIOLOGY FUNDAMENTALS
+# Source: Standard biology textbooks, NIH
+# ═══════════════════════════════════════════════════════════════════════════════
+
+BIOLOGY_FACTS: Dict[str, tuple[str, str]] = {
+    # Cell parts (organelles)
+    "mitochondria": ("Powerhouse of the cell", "Produces ATP through cellular respiration"),
+    "mitochondrion": ("Powerhouse of the cell", "Produces ATP through cellular respiration"),
+    "powerhouse of the cell": ("Mitochondria", "Organelle that produces ATP energy"),
+    "nucleus": ("Control center of the cell", "Contains DNA and controls cell activities"),
+    "ribosome": ("Protein factory", "Synthesizes proteins from mRNA instructions"),
+    "endoplasmic reticulum": ("Transport network", "Processes and transports proteins"),
+    "golgi apparatus": ("Packaging center", "Modifies and packages proteins for transport"),
+    "cell membrane": ("Protective barrier", "Controls what enters/exits the cell"),
+    "cytoplasm": ("Cell fluid", "Gel-like substance where organelles float"),
+    "chloroplast": ("Photosynthesis site", "Converts sunlight to energy in plants"),
+    "vacuole": ("Storage container", "Stores water, nutrients, and waste"),
+    "lysosome": ("Recycling center", "Breaks down waste and cellular debris"),
+    
+    # Key processes
+    "photosynthesis": ("6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂", "Plants convert sunlight, water, and CO₂ into glucose and oxygen"),
+    "cellular respiration": ("C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + ATP", "Cells convert glucose and oxygen into energy, CO₂, and water"),
+    "dna replication": ("DNA → 2 DNA copies", "Process where DNA makes a copy of itself before cell division"),
+    "transcription": ("DNA → mRNA", "DNA code is copied into messenger RNA"),
+    "translation": ("mRNA → Protein", "Ribosomes read mRNA to build proteins"),
+    
+    # DNA/RNA
+    "dna bases": ("A, T, G, C", "Adenine, Thymine, Guanine, Cytosine - the 4 DNA nucleotides"),
+    "rna bases": ("A, U, G, C", "Adenine, Uracil, Guanine, Cytosine - the 4 RNA nucleotides"),
+    "base pairing": ("A-T, G-C (DNA); A-U, G-C (RNA)", "Complementary base pairs in nucleic acids"),
+    "double helix": ("DNA structure", "Two strands wound around each other discovered by Watson & Crick"),
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MATH NOTATION & SYMBOLS
+# Source: Mathematical conventions
+# ═══════════════════════════════════════════════════════════════════════════════
+
+MATH_NOTATION: Dict[str, tuple[str, str]] = {
+    # Calculus
+    "derivative": ("d/dx or f'(x)", "Rate of change of a function"),
+    "derivative of x^2": ("2x", "Using power rule: d/dx(x^n) = nx^(n-1)"),
+    "derivative of x^3": ("3x²", "Using power rule: d/dx(x^n) = nx^(n-1)"),
+    "derivative of sin(x)": ("cos(x)", "Derivative of sine is cosine"),
+    "derivative of cos(x)": ("-sin(x)", "Derivative of cosine is negative sine"),
+    "derivative of e^x": ("e^x", "e^x is its own derivative"),
+    "derivative of ln(x)": ("1/x", "Derivative of natural log"),
+    "integral": ("∫ or antiderivative", "Reverse of derivative, finds area under curve"),
+    "integral of x": ("x²/2 + C", "Antiderivative of x"),
+    "integral of 1/x": ("ln|x| + C", "Antiderivative of 1/x is natural log"),
+    "integral of x^n": ("x^(n+1)/(n+1) + C", "Power rule for integration (n ≠ -1)"),
+    
+    # Symbols
+    "sigma": ("Σ", "Summation - add up a series"),
+    "pi symbol": ("π", "Ratio of circumference to diameter ≈ 3.14159"),
+    "infinity": ("∞", "Without bound, larger than any number"),
+    "delta": ("Δ or δ", "Change in a quantity"),
+    "theta": ("θ", "Commonly used for angles"),
+    "alpha": ("α", "First letter of Greek alphabet, often a constant"),
+    "beta": ("β", "Second letter of Greek alphabet"),
+    "lambda": ("λ", "Wavelength in physics, anonymous functions in CS"),
+    "sqrt": ("√", "Square root symbol"),
+    "not equal": ("≠", "Not equal to"),
+    "approximately": ("≈", "Approximately equal to"),
+    "less than or equal": ("≤", "Less than or equal to"),
+    "greater than or equal": ("≥", "Greater than or equal to"),
+    "therefore": ("∴", "Therefore, it follows that"),
+    "because": ("∵", "Because, since"),
+    
+    # Common formulas
+    "quadratic formula": ("x = (-b ± √(b²-4ac)) / 2a", "Solves ax² + bx + c = 0"),
+    "pythagorean theorem": ("a² + b² = c²", "Relationship of sides in right triangle"),
+    "distance formula": ("d = √((x₂-x₁)² + (y₂-y₁)²)", "Distance between two points"),
+    "slope formula": ("m = (y₂-y₁)/(x₂-x₁)", "Slope of a line between two points"),
+    "area of circle": ("A = πr²", "Area equals pi times radius squared"),
+    "circumference": ("C = 2πr", "Circumference equals 2 pi times radius"),
+    "volume of sphere": ("V = (4/3)πr³", "Volume of a sphere"),
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHYSICS UNITS (SI System)
+# Source: NIST, International Bureau of Weights and Measures
+# ═══════════════════════════════════════════════════════════════════════════════
+
+SI_UNITS: Dict[str, tuple[str, str, str]] = {
+    # Base SI units: (symbol, quantity, definition)
+    "meter": ("m", "length", "Base unit of length"),
+    "kilogram": ("kg", "mass", "Base unit of mass"),
+    "second": ("s", "time", "Base unit of time"),
+    "ampere": ("A", "electric current", "Base unit of electric current"),
+    "kelvin": ("K", "temperature", "Base unit of thermodynamic temperature"),
+    "mole": ("mol", "amount of substance", "Base unit, 6.022×10²³ particles"),
+    "candela": ("cd", "luminous intensity", "Base unit of light intensity"),
+    
+    # Derived units
+    "newton": ("N", "force", "kg⋅m/s² - force to accelerate 1kg at 1m/s²"),
+    "joule": ("J", "energy", "N⋅m - work done by 1N force over 1m"),
+    "watt": ("W", "power", "J/s - rate of energy transfer"),
+    "volt": ("V", "voltage", "W/A - electric potential"),
+    "ohm": ("Ω", "resistance", "V/A - electrical resistance"),
+    "hertz": ("Hz", "frequency", "1/s - cycles per second"),
+    "pascal": ("Pa", "pressure", "N/m² - force per unit area"),
+    "coulomb": ("C", "electric charge", "A⋅s - amount of electric charge"),
+}
+
+SI_PREFIXES: Dict[str, tuple[str, float]] = {
+    "tera": ("T", 1e12),
+    "giga": ("G", 1e9),
+    "mega": ("M", 1e6),
+    "kilo": ("k", 1e3),
+    "hecto": ("h", 1e2),
+    "deca": ("da", 1e1),
+    "deci": ("d", 1e-1),
+    "centi": ("c", 1e-2),
+    "milli": ("m", 1e-3),
+    "micro": ("μ", 1e-6),
+    "nano": ("n", 1e-9),
+    "pico": ("p", 1e-12),
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHYSICS LAWS & EQUATIONS
+# Source: Physics textbooks, NIST
+# ═══════════════════════════════════════════════════════════════════════════════
+
+PHYSICS_LAWS: Dict[str, tuple[str, str]] = {
+    # Newton's Laws (multiple forms for matching)
+    "newton first law": ("An object at rest stays at rest, an object in motion stays in motion unless acted upon by an external force", "Law of Inertia"),
+    "newton's first law": ("An object at rest stays at rest, an object in motion stays in motion unless acted upon by an external force", "Law of Inertia"),
+    "first law of motion": ("An object at rest stays at rest, an object in motion stays in motion unless acted upon by an external force", "Law of Inertia"),
+    "law of inertia": ("An object at rest stays at rest, an object in motion stays in motion unless acted upon by an external force", "Newton's First Law"),
+    
+    "newton second law": ("F = ma (Force equals mass times acceleration)", "Fundamental law of motion"),
+    "newton's second law": ("F = ma (Force equals mass times acceleration)", "Fundamental law of motion"),
+    "second law of motion": ("F = ma (Force equals mass times acceleration)", "Fundamental law of motion"),
+    "f=ma": ("Force equals mass times acceleration", "Newton's Second Law"),
+    
+    "newton third law": ("Every action has an equal and opposite reaction", "Action-reaction pairs"),
+    "newton's third law": ("Every action has an equal and opposite reaction", "Action-reaction pairs"),
+    "third law of motion": ("Every action has an equal and opposite reaction", "Action-reaction pairs"),
+    
+    # Other fundamental laws
+    "law of gravity": ("F = Gm₁m₂/r²", "Gravitational force between two masses"),
+    "ohm's law": ("V = IR (Voltage equals current times resistance)", "Fundamental electrical law"),
+    "ohm law": ("V = IR (Voltage equals current times resistance)", "Fundamental electrical law"),
+    "coulomb's law": ("F = kq₁q₂/r²", "Electric force between charges"),
+    "coulomb law": ("F = kq₁q₂/r²", "Electric force between charges"),
+    
+    # Equations
+    "kinetic energy": ("KE = ½mv²", "Energy of motion"),
+    "potential energy": ("PE = mgh", "Energy due to position in gravity"),
+    "momentum": ("p = mv", "Mass times velocity"),
+    "work": ("W = Fd", "Force times distance"),
+    "power": ("P = W/t", "Work divided by time"),
+    "density": ("ρ = m/V", "Mass divided by volume"),
+    "pressure": ("P = F/A", "Force divided by area"),
+    "wave equation": ("v = fλ", "Velocity equals frequency times wavelength"),
 }
 
 
@@ -311,6 +556,15 @@ CHEMICAL_FORMULAS: Dict[str, tuple[str, str]] = {
     "sugar": ("C₁₂H₂₂O₁₁", "Sucrose"),
     "methane": ("CH₄", "Methane"),
     "ammonia": ("NH₃", "Ammonia"),
+    # Adding more common compounds
+    "glucose": ("C₆H₁₂O₆", "Simple sugar, energy source"),
+    "ethanol": ("C₂H₅OH", "Alcohol"),
+    "acetic acid": ("CH₃COOH", "Vinegar"),
+    "sulfuric acid": ("H₂SO₄", "Strong acid"),
+    "hydrochloric acid": ("HCl", "Stomach acid"),
+    "sodium hydroxide": ("NaOH", "Lye, strong base"),
+    "calcium carbonate": ("CaCite", "Limestone, chalk"),
+    "hydrogen peroxide": ("H₂O₂", "Disinfectant"),
 }
 
 
@@ -447,6 +701,12 @@ class KnowledgeBase:
             self._query_general(question_lower) or
             self._query_acronym(question_lower) or
             self._query_chemistry(question_lower) or
+            self._query_element(question_lower) or
+            self._query_chemical_notation(question_lower) or
+            self._query_biology(question_lower) or
+            self._query_math_notation(question_lower) or
+            self._query_physics(question_lower) or
+            self._query_si_units(question_lower) or
             self._query_historical(question_lower) or
             self._query_company(question_lower)
         )
@@ -710,6 +970,185 @@ class KnowledgeBase:
                 )
         return None
     
+    def _query_element(self, question: str) -> Optional[VerifiedFact]:
+        """Query for periodic table elements."""
+        # Check for element-related keywords
+        if not any(word in question for word in [
+            "element", "atomic", "symbol", "mass", "number", "periodic",
+            "hydrogen", "helium", "carbon", "oxygen", "nitrogen", "gold", 
+            "silver", "iron", "copper", "sodium", "chlorine", "potassium"
+        ]):
+            return None
+        
+        # Check for element by name
+        for element, (symbol, atomic_num, mass, category) in PERIODIC_TABLE.items():
+            if element in question:
+                return VerifiedFact(
+                    fact=f"{element.title()} ({symbol}) is element {atomic_num} with atomic mass {mass}. It is a {category}.",
+                    category="chemistry",
+                    source="IUPAC Periodic Table",
+                    source_url="https://iupac.org/what-we-do/periodic-table-of-elements/",
+                    confidence=1.0,
+                )
+        
+        # Check for element by symbol
+        for symbol_lower, element in ELEMENT_SYMBOLS.items():
+            pattern = r'\b' + re.escape(symbol_lower) + r'\b'
+            if re.search(pattern, question):
+                symbol, atomic_num, mass, category = PERIODIC_TABLE[element]
+                return VerifiedFact(
+                    fact=f"{element.title()} ({symbol}) is element {atomic_num} with atomic mass {mass}. It is a {category}.",
+                    category="chemistry",
+                    source="IUPAC Periodic Table",
+                    source_url="https://iupac.org/what-we-do/periodic-table-of-elements/",
+                    confidence=1.0,
+                )
+        
+        return None
+    
+    def _query_chemical_notation(self, question: str) -> Optional[VerifiedFact]:
+        """Query for chemical notation explanations (like H2O)."""
+        # Check for notation-related keywords
+        if not any(word in question for word in [
+            "mean", "notation", "formula", "h2o", "co2", "nacl", "h2so4",
+            "molecule", "atoms", "compound", "what is", "explain"
+        ]):
+            return None
+        
+        for formula, explanation in CHEMICAL_NOTATION.items():
+            if formula in question:
+                return VerifiedFact(
+                    fact=explanation,
+                    category="chemistry",
+                    source="IUPAC Chemistry Notation",
+                    source_url="https://iupac.org/",
+                    confidence=1.0,
+                )
+        
+        return None
+    
+    def _query_biology(self, question: str) -> Optional[VerifiedFact]:
+        """Query for biology facts (cells, DNA, processes)."""
+        # Check for biology-related keywords
+        if not any(word in question for word in [
+            "cell", "dna", "rna", "mitochondria", "nucleus", "ribosome",
+            "photosynthesis", "respiration", "replication", "protein",
+            "organelle", "membrane", "chloroplast", "atp", "adenine",
+            "thymine", "cytosine", "guanine", "uracil", "biology"
+        ]):
+            return None
+        
+        for topic, (fact, description) in BIOLOGY_FACTS.items():
+            if topic in question:
+                return VerifiedFact(
+                    fact=f"{fact}. {description}",
+                    category="biology",
+                    source="NIH/Biology Textbooks",
+                    source_url="https://www.ncbi.nlm.nih.gov/",
+                    confidence=1.0,
+                )
+        
+        return None
+    
+    def _query_math_notation(self, question: str) -> Optional[VerifiedFact]:
+        """Query for mathematical notation and symbols."""
+        # Check for math-related keywords
+        if not any(word in question for word in [
+            "derivative", "integral", "sigma", "delta", "sum", "infinity",
+            "pythagorean", "quadratic", "formula", "theorem", "equation",
+            "symbol", "notation", "math", "calculus", "∑", "∫", "∆", "√"
+        ]):
+            return None
+        
+        for concept, (meaning, example) in MATH_NOTATION.items():
+            if concept in question:
+                if example:
+                    return VerifiedFact(
+                        fact=f"{meaning} Example: {example}",
+                        category="mathematics",
+                        source="Mathematical Standards",
+                        source_url="https://mathworld.wolfram.com/",
+                        confidence=1.0,
+                    )
+                else:
+                    return VerifiedFact(
+                        fact=meaning,
+                        category="mathematics",
+                        source="Mathematical Standards",
+                        source_url="https://mathworld.wolfram.com/",
+                        confidence=1.0,
+                    )
+        
+        return None
+    
+    def _query_physics(self, question: str) -> Optional[VerifiedFact]:
+        """Query for physics laws and equations."""
+        # Check for physics-related keywords
+        if not any(word in question for word in [
+            "newton", "law", "motion", "force", "energy", "momentum",
+            "kinetic", "potential", "ohm", "voltage", "current", "resistance",
+            "f=ma", "physics", "equation", "inertia", "acceleration"
+        ]):
+            return None
+        
+        # Prioritize longer/more specific matches first
+        sorted_laws = sorted(PHYSICS_LAWS.keys(), key=len, reverse=True)
+        for law in sorted_laws:
+            if law in question:
+                statement, formula = PHYSICS_LAWS[law]
+                if formula:
+                    return VerifiedFact(
+                        fact=f"{statement} Formula: {formula}",
+                        category="physics",
+                        source="Physics Fundamentals",
+                        source_url="https://physics.nist.gov/",
+                        confidence=1.0,
+                    )
+                else:
+                    return VerifiedFact(
+                        fact=statement,
+                        category="physics",
+                        source="Physics Fundamentals",
+                        source_url="https://physics.nist.gov/",
+                        confidence=1.0,
+                    )
+        
+        return None
+    
+    def _query_si_units(self, question: str) -> Optional[VerifiedFact]:
+        """Query for SI units and prefixes."""
+        # Check for unit-related keywords
+        if not any(word in question for word in [
+            "unit", "meter", "kilogram", "second", "ampere", "kelvin", "mole",
+            "candela", "newton", "joule", "watt", "pascal", "hertz", "volt",
+            "si", "measurement", "prefix", "kilo", "mega", "giga", "milli", "micro"
+        ]):
+            return None
+        
+        # Check SI units
+        for unit_name, (symbol, quantity, definition) in SI_UNITS.items():
+            if unit_name in question:
+                return VerifiedFact(
+                    fact=f"The {unit_name} ({symbol}) is the SI unit of {quantity}. {definition}",
+                    category="physics",
+                    source="BIPM SI Units",
+                    source_url="https://www.bipm.org/en/measurement-units",
+                    confidence=1.0,
+                )
+        
+        # Check SI prefixes
+        for prefix, (symbol, factor) in SI_PREFIXES.items():
+            if prefix in question:
+                return VerifiedFact(
+                    fact=f"The SI prefix {prefix} ({symbol}) means {factor}.",
+                    category="physics",
+                    source="BIPM SI Prefixes",
+                    source_url="https://www.bipm.org/en/measurement-units",
+                    confidence=1.0,
+                )
+        
+        return None
+    
     def verify_statement(self, statement: str) -> Optional[tuple[bool, VerifiedFact]]:
         """
         Verify if a statement matches known facts.
@@ -759,26 +1198,54 @@ if __name__ == "__main__":
     kb = KnowledgeBase()
     
     test_questions = [
+        # Geography
         "What is the capital of France?",
         "What is the capital of Japan?",
+        # History/Companies
         "When was Python created?",
         "Who founded Apple?",
+        # Science
         "What is the speed of light?",
         "What language do they speak in Brazil?",
         "What is the population of India?",
+        # NEW: Elements
+        "What is the atomic number of carbon?",
+        "What element has the symbol Au?",
+        "Tell me about oxygen",
+        # NEW: Chemical Notation
+        "What does H2O mean?",
+        "Explain the formula CO2",
+        # NEW: Biology
+        "What is the mitochondria?",
+        "What is photosynthesis?",
+        "What does DNA stand for?",
+        # NEW: Math
+        "What is the derivative symbol?",
+        "What is the quadratic formula?",
+        "What does sigma mean in math?",
+        # NEW: Physics
+        "What is Newton's first law?",
+        "What is Ohm's law?",
+        # NEW: SI Units
+        "What is a joule?",
+        "What does the prefix kilo mean?",
     ]
     
     print("=" * 60)
     print("KNOWLEDGE BASE TEST")
     print("=" * 60)
     
+    hits = 0
     for q in test_questions:
         print(f"\n❓ {q}")
         result = kb.query(q)
         if result:
             print(f"   ✓ {result.fact}")
             print(f"   📚 Source: {result.source}")
+            hits += 1
         else:
             print("   ✗ Not in knowledge base")
     
-    print(f"\n📊 Stats: {kb.get_stats()}")
+    print(f"\n{'=' * 60}")
+    print(f"RESULTS: {hits}/{len(test_questions)} questions answered")
+    print(f"📊 Stats: {kb.get_stats()}")
