@@ -1,296 +1,547 @@
-# tinyTalk
+# TinyTalk
+
+**The Verified General-Purpose Programming Language**
+
+> Every loop bounded. Every operation traced. Every output proven.
+
+TinyTalk is a Turing-complete programming language built on Newton's verified computation architecture. It combines the power of a modern general-purpose language with the safety guarantees of bounded, verifiable execution.
 
 ```
-    ╭──────────────────────────────────────────────────────────────╮
-    │                                                              │
-    │   tinyTalk                                                   │
-    │   Smalltalk is back. With boundaries.                        │
-    │                                                              │
-    │   "Objects all the way down,                                 │
-    │    but some states cannot exist."                            │
-    │                                                              │
-    │   finfr = f/g — The ratio IS the constraint.                 │
-    │                                                              │
-    ╰──────────────────────────────────────────────────────────────╯
+┌─────────────────────────────────────────────────────────────────┐
+│                        TinyTalk Architecture                     │
+├─────────────────────────────────────────────────────────────────┤
+│  Source → Lexer → Parser → Type Check → Verify → Execute        │
+│                                              ↓                   │
+│                                         Bounded                  │
+│                                              ↓                   │
+│                              Trace ← Ledger ← Result             │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**The "No-First" constraint language. Define what cannot happen.**
+## Features
 
-**January 6, 2026** · **Jared Nashon Lewis** · **Jared Lewis Conglomerate** · **parcRI** · **Newton** · **tinyTalk** · **Ada Computing Company**
-
-Available for **Python**, **Ruby**, and **R**.
-
----
-
-## The Idea
-
-```
-Traditional:  "Here's what to do, step by step."
-tinyTalk:     "Here's what CANNOT happen."
-```
-
-**Smalltalk** gave us objects and messages.
-**tinyTalk** adds boundaries and laws.
-
----
-
-## Install
-
-```bash
-# From Newton-api directory
-pip install -e .
-
-# Then just import
-from newton_sdk import Blueprint, field, law, forge, when, finfr, ratio
-```
-
----
-
-## The Five Sacred Words
-
-| Word | Meaning | When to Use |
-|------|---------|-------------|
-| `when` | "This is true" | Declaring facts |
-| `and` | "Also this" | Combining conditions |
-| `fin` | "Stop here" | Soft closure (can reopen) |
-| `finfr` | "FORBIDDEN" | Hard stop. Ontological death. |
-| `ratio` | "f divided by g" | Dimensional constraint checking |
-
----
+| Feature | Description |
+|---------|-------------|
+| **Verified Execution** | Every operation is bounded and traced |
+| **Turing Complete** | Full loops, recursion, conditionals |
+| **Type System** | Static typing with inference |
+| **FFI** | Call Python, JavaScript, Go, Rust, C |
+| **Functional** | First-class functions, lambdas, pipes |
+| **Safe by Default** | No infinite loops, no stack overflow |
 
 ## Quick Start
 
-### Python 🐍
+### Installation
+
+```bash
+pip install tinytalk
+# or from source
+git clone https://github.com/your-repo/tinytalk
+cd tinytalk
+pip install -e .
+```
+
+### Hello World
+
+```tinytalk
+println("Hello, World!")
+```
+
+### Run Code
 
 ```python
-from newton_sdk import Blueprint, field, law, forge, when, finfr, ratio
+from tinytalk import run
 
-class BankAccount(Blueprint):
-    balance = field(float, default=100.0)
-
-    @law
-    def no_overdraft(self):
-        when(self.balance < 0, finfr)  # This state CANNOT exist
-
-    @forge
-    def withdraw(self, amount):
-        self.balance -= amount
-        return f"Withdrew ${amount}"
-
-# Use it
-account = BankAccount()
-account.withdraw(50)    # ✓ Works
-account.withdraw(60)    # ✗ BLOCKED by no_overdraft
+result = run('println("Hello!")')
 ```
 
-### Ruby 💎
+### REPL
 
-```ruby
-require_relative 'tinytalk/ruby/tinytalk'
-include TinyTalk
-
-class BankAccount < Blueprint
-  field :balance, Float, default: 100.0
-
-  law :no_overdraft do
-    when_condition(balance < 0) { finfr }
-  end
-
-  forge :withdraw do |amount|
-    self.balance = balance - amount
-    "Withdrew $#{amount}"
-  end
-end
-
-account = BankAccount.new
-account.withdraw(50)    # ✓ Works
-account.withdraw(60)    # ✗ Raises Finfr
+```python
+from tinytalk import repl
+repl()
 ```
 
-### R 📊
+```
+TinyTalk v1.0.0 - Verified Computation
+Type 'exit' to quit, 'help' for help
 
-```r
-source("tinytalk/r/tinytalk.R")
+>>> let x = 42
+>>> println(x * 2)
+84
+>>> exit
+Goodbye!
+```
 
-BankAccount <- Blueprint(
-  fields = list(balance = 100.0),
-  laws = list(
-    no_overdraft = function(self) {
-      when_cond(self$balance < 0, function() finfr())
-    }
-  ),
-  forges = list(
-    withdraw = function(self, amount) {
-      self$balance <- self$balance - amount
-      paste("Withdrew $", amount)
-    }
-  )
+## Language Reference
+
+### Variables
+
+```tinytalk
+// Mutable variable
+let x = 10
+x = 20
+
+// Immutable constant
+const PI = 3.14159
+// PI = 3  // Error: Cannot reassign constant
+```
+
+### Types
+
+```tinytalk
+// Primitives
+let n: int = 42
+let f: float = 3.14
+let s: str = "hello"
+let b: bool = true
+let nothing = null
+
+// Collections
+let list: list[int] = [1, 2, 3]
+let map: map[str, int] = {"a": 1, "b": 2}
+
+// Optional
+let maybe: ?int = null
+```
+
+### Functions
+
+```tinytalk
+// Function declaration
+fn add(a: int, b: int) -> int {
+    return a + b
+}
+
+// Lambda expressions
+let double = (x) => x * 2
+
+// Higher-order functions
+let numbers = [1, 2, 3, 4, 5]
+let evens = filter((x) => x % 2 == 0, numbers)
+let doubled = map_((x) => x * 2, numbers)
+```
+
+### Control Flow
+
+```tinytalk
+// If-else
+if x > 0 {
+    println("positive")
+} elif x < 0 {
+    println("negative")
+} else {
+    println("zero")
+}
+
+// Ternary
+let sign = x > 0 ? "+" : "-"
+
+// For loop
+for i in range(10) {
+    println(i)
+}
+
+// For with collection
+for item in [1, 2, 3] {
+    println(item)
+}
+
+// While loop
+let i = 0
+while i < 10 {
+    println(i)
+    i += 1
+}
+
+// Match expression
+match value {
+    1 => println("one"),
+    2 => println("two"),
+    _ => println("other")
+}
+```
+
+### Operators
+
+```tinytalk
+// Arithmetic
++ - * / // % **
+
+// Comparison
+== != < > <= >=
+
+// Logical
+and or not
+
+// Bitwise
+& | ^ ~ << >>
+
+// Assignment
+= += -= *= /= //= %=
+
+// Pipe (functional)
+x |> f |> g   // Same as g(f(x))
+```
+
+### Structs
+
+```tinytalk
+struct Point {
+    x: float,
+    y: float
+}
+
+let p = Point(3.0, 4.0)
+println(p.x)  // 3.0
+
+// Methods via functions
+fn distance(p: Point) -> float {
+    return sqrt(p.x ** 2 + p.y ** 2)
+}
+```
+
+### Enums
+
+```tinytalk
+enum Color {
+    Red,
+    Green,
+    Blue,
+    RGB(int, int, int)
+}
+
+let c = Color.Red
+let custom = Color.RGB(255, 128, 0)
+```
+
+### Error Handling
+
+```tinytalk
+try {
+    let result = risky_operation()
+} catch e {
+    println("Error: " + e)
+} finally {
+    cleanup()
+}
+
+// Throw errors
+throw "Something went wrong"
+```
+
+## Standard Library
+
+### Output
+```tinytalk
+print("no newline")
+println("with newline")
+```
+
+### Type Functions
+```tinytalk
+len([1, 2, 3])      // 3
+type(42)            // "int"
+str(123)            // "123"
+int("42")           // 42
+float("3.14")       // 3.14
+bool(1)             // true
+```
+
+### Collections
+```tinytalk
+range(5)            // [0, 1, 2, 3, 4]
+range(1, 5)         // [1, 2, 3, 4]
+range(0, 10, 2)     // [0, 2, 4, 6, 8]
+
+append(list, item)
+push(list, item)
+pop(list)
+keys(map)
+values(map)
+contains(list, item)
+slice(list, start, end)
+reverse(list)
+sort(list)
+```
+
+### Higher-Order Functions
+```tinytalk
+filter(fn, list)
+map_(fn, list)
+reduce(fn, list, initial)
+zip(list1, list2)
+enumerate(list)
+```
+
+### Strings
+```tinytalk
+split("a,b,c", ",")     // ["a", "b", "c"]
+join(["a", "b"], "-")   // "a-b"
+```
+
+### Math
+```tinytalk
+sum([1, 2, 3])      // 6
+min(1, 2, 3)        // 1
+max([1, 2, 3])      // 3
+abs(-5)             // 5
+round(3.7)          // 4
+floor(3.7)          // 3
+ceil(3.2)           // 4
+sqrt(16)            // 4.0
+pow(2, 10)          // 1024.0
+sin(PI / 2)         // 1.0
+cos(0)              // 1.0
+tan(PI / 4)         // 1.0
+log(E)              // 1.0
+exp(1)              // 2.718...
+```
+
+### Constants
+```tinytalk
+PI      // 3.14159...
+E       // 2.71828...
+TAU     // 6.28318...
+INF     // Infinity
+NAN     // Not a Number
+```
+
+## Foreign Function Interface (FFI)
+
+TinyTalk can call code from other languages.
+
+### Python Interop
+
+```tinytalk
+// Import Python module
+import @math
+
+let x = math.sqrt(16)
+println(x)  // 4.0
+
+// Import specific functions
+import @statistics { mean, median }
+
+let data = [1, 2, 3, 4, 5]
+println(mean(data))  // 3.0
+
+// Execute Python code directly
+let result = eval_python("sum([1, 2, 3, 4, 5])")
+println(result)  // 15
+```
+
+### JavaScript Interop
+
+```tinytalk
+// Execute JavaScript (requires Node.js)
+let result = javascript("return args[0] * 2", 21)
+println(result)  // 42
+
+// Import Node.js module
+import "lodash" as _
+```
+
+### HTTP Requests
+
+```tinytalk
+// GET request
+let response = http_get("https://api.example.com/data")
+println(response.status)  // 200
+println(response.body)
+
+// POST request
+let data = {"name": "TinyTalk"}
+let response = http_post("https://api.example.com/create", data)
+```
+
+### Shell Commands
+
+```tinytalk
+// Run shell command (requires system access)
+let result = shell("ls -la")
+println(result.stdout)
+```
+
+## Verified Execution
+
+TinyTalk guarantees bounded execution through:
+
+### Execution Bounds
+
+```python
+from tinytalk import run, ExecutionBounds
+
+bounds = ExecutionBounds(
+    max_ops=1_000_000,        # Maximum operations
+    max_iterations=100_000,   # Maximum loop iterations
+    max_recursion=1000,       # Maximum recursion depth
+    timeout_seconds=30.0      # Maximum execution time
 )
 
-account <- BankAccount$new()
-account$withdraw(50)    # ✓ Works
-account$withdraw(60)    # ✗ Error: finfr
+result = run(source, bounds)
 ```
 
----
+### Trace & Ledger
 
-## NEW: f/g Ratio Constraints
-
-**finfr = f/g** — Every constraint is a ratio between what you're trying to do (f) and what reality allows (g).
+Every execution produces a trace:
 
 ```python
-from newton_sdk import Blueprint, field, law, forge, when, finfr, ratio
+from tinytalk import TinyTalkKernel
 
-class LeverageGovernor(Blueprint):
-    debt = field(float, default=0.0)
-    equity = field(float, default=1000.0)
+kernel = TinyTalkKernel()
+result = kernel.execute("let x = 1 + 2")
 
-    @law
-    def max_leverage(self):
-        # Debt-to-equity ratio cannot exceed 3:1
-        when(ratio(self.debt, self.equity) > 3.0, finfr)
+# Check trace
+print(result.trace.steps)
 
-    @forge
-    def take_loan(self, amount: float):
-        self.debt += amount
-
-# Use it
-gov = LeverageGovernor()
-gov.take_loan(2000)   # ✓ Works (ratio = 2.0)
-gov.take_loan(1500)   # ✗ BLOCKED (ratio would be 3.5 > 3.0)
+# Check ledger
+for entry in kernel.ledger.entries:
+    print(entry.hash, entry.operation)
 ```
 
-### Use Cases
+### Fin/Finfr Results
 
-| Domain | Constraint | f | g | Threshold |
-|--------|------------|---|---|-----------|
-| **Banking** | No overdraft | withdrawal | balance | ≤ 1.0 |
-| **Finance** | Leverage limit | debt | equity | ≤ 3.0 |
-| **Healthcare** | Seizure safety | flicker_rate | safe_limit | < 1.0 |
-| **Education** | Class size | students | capacity | ≤ 1.0 |
-
----
-
-## The Three Layers
-
-```
-╭─────────────────────────────────────────────────────╮
-│  Layer 2: APPLICATION                               │
-│  Your code. Your use case.                          │
-├─────────────────────────────────────────────────────┤
-│  Layer 1: EXECUTIVE                                 │
-│  field() = state    forge() = actions               │
-├─────────────────────────────────────────────────────┤
-│  Layer 0: GOVERNANCE                                │
-│  law() = physics    finfr = impossible              │
-│  ratio() = dimensional analysis                     │
-╰─────────────────────────────────────────────────────╯
-```
-
-**Layer 0** defines the physics of your world.
-**Layer 1** defines what can happen within those physics.
-**Layer 2** is your application.
-
----
-
-## Matter Types
-
-Prevent unit confusion with typed values:
+All operations return verified results:
 
 ```python
-from newton_sdk import Money, Celsius, PSI, Meters
+from tinytalk import fin, finfr
 
-# These work:
-total = Money(100) + Money(50)      # Money(150)
-hot = Celsius(100) > Celsius(50)    # True
+# Success
+result = fin(42, trace)
 
-# These FAIL (type safety):
-Money(100) + Celsius(50)            # TypeError!
-Celsius(20) + PSI(30)               # TypeError!
+# Failure  
+error = finfr("Division by zero", trace)
+
+# Check result
+if result.success:
+    print(result.value)
+else:
+    print(result.error)
 ```
 
-Remember the Mars Climate Orbiter? It crashed because of unit confusion.
-**tinyTalk prevents that.**
+## FFI Security
 
-Available: `Money`, `Mass`, `Distance`, `Temperature`, `Pressure`, `Volume`, `FlowRate`, `Velocity`, `Time`
-
----
-
-## Kinetic Engine
-
-Motion = the mathematical delta between two states.
+Control what external code can do:
 
 ```python
-from newton_sdk import KineticEngine, Presence
+from tinytalk import FFIConfig, configure_ffi
 
-engine = KineticEngine()
-
-# Add a boundary
-engine.add_boundary(
-    lambda d: d.changes.get('x', {}).get('to', 0) > 100,
-    name="MaxX"
+config = FFIConfig(
+    allow_python=True,
+    allow_javascript=True,
+    allow_system=False,      # No shell commands
+    allow_network=False,     # No HTTP requests
+    allow_filesystem=False,  # No file access
+    trusted_modules=[
+        'math', 'json', 'datetime', 
+        'collections', 'itertools'
+    ]
 )
 
-# Calculate motion
-start = Presence({'x': 0, 'y': 0})
-end = Presence({'x': 50, 'y': 25})
-
-result = engine.resolve_motion(start, end)
-# {'status': 'synchronized', 'delta': {...}}
-
-# Violate boundary
-end_bad = Presence({'x': 150, 'y': 0})
-result = engine.resolve_motion(start, end_bad)
-# {'status': 'finfr', 'reason': "Boundary 'MaxX' violated"}
+configure_ffi(config)
 ```
 
----
+## Examples
+
+### Fibonacci
+
+```tinytalk
+fn fib(n: int) -> int {
+    if n <= 1 {
+        return n
+    }
+    return fib(n - 1) + fib(n - 2)
+}
+
+println(fib(10))  // 55
+```
+
+### FizzBuzz
+
+```tinytalk
+for i in range(1, 101) {
+    if i % 15 == 0 {
+        println("FizzBuzz")
+    } elif i % 3 == 0 {
+        println("Fizz")
+    } elif i % 5 == 0 {
+        println("Buzz")
+    } else {
+        println(i)
+    }
+}
+```
+
+### Quick Sort
+
+```tinytalk
+fn quicksort(arr: list[int]) -> list[int] {
+    if len(arr) <= 1 {
+        return arr
+    }
+    
+    let pivot = arr[0]
+    let less = filter((x) => x < pivot, slice(arr, 1, null))
+    let greater = filter((x) => x >= pivot, slice(arr, 1, null))
+    
+    return quicksort(less) + [pivot] + quicksort(greater)
+}
+
+let sorted = quicksort([3, 1, 4, 1, 5, 9, 2, 6])
+println(sorted)  // [1, 1, 2, 3, 4, 5, 6, 9]
+```
+
+### Data Processing
+
+```tinytalk
+import @json
+
+let data = json.loads('{"users": [{"name": "Alice", "age": 30}]}')
+let users = data["users"]
+
+for user in users {
+    println(user["name"] + " is " + str(user["age"]))
+}
+```
+
+### Pipe Operations
+
+```tinytalk
+let result = [1, 2, 3, 4, 5]
+    |> filter((x) => x % 2 == 0)
+    |> map_((x) => x * 2)
+    |> sum
+
+println(result)  // 12
+```
+
+## Architecture
+
+```
+tinytalk/
+├── __init__.py      # Package exports
+├── kernel.py        # Newton verified execution kernel
+├── lexer.py         # Tokenizer (~100 token types)
+├── parser.py        # Recursive descent parser (20+ AST nodes)
+├── types.py         # Type system with inference
+├── runtime.py       # Interpreter with bounded execution
+├── ffi.py           # Foreign function interface
+└── stdlib.py        # Standard library functions
+```
 
 ## Philosophy
 
-> "I made up the term 'object-oriented', and I can tell you
->  I didn't have C++ in mind."
->  — Alan Kay, creator of Smalltalk
+TinyTalk is built on three principles:
 
-tinyTalk continues the Smalltalk tradition:
-- Everything is an object (**Blueprint**)
-- Objects communicate via messages (**forge**)
-- But now, objects have **laws** they cannot break
-- And **ratios** define their dimensional constraints
+1. **The constraint IS the instruction** - Execution bounds aren't limits, they're guarantees
+2. **The verification IS the computation** - Every operation is automatically verified
+3. **The trace IS the proof** - Full audit trail for every execution
 
-**The constraint IS the instruction.**
-**The boundary IS the behavior.**
-**finfr = f/g. The ratio IS the physics.**
+## License
+
+MIT License - See [LICENSE](LICENSE) for details.
 
 ---
 
-## Learn More
-
-| Resource | Description |
-|----------|-------------|
-| [GETTING_STARTED.md](../GETTING_STARTED.md) | Multi-level developer guide |
-| [TINYTALK_BIBLE.md](../TINYTALK_BIBLE.md) | Complete philosophical manual |
-| [examples/tinytalk_demo.py](../examples/tinytalk_demo.py) | Interactive demo |
-
----
-
-## Quick Reference
-
-```
-╭────────────────────────────────────────────────────────────────╮
-│  KEYWORDS        when, and, fin, finfr, ratio                   │
-│  DECORATORS      @law (Layer 0), @forge (Layer 1)              │
-│  STATE           field(type, default=value)                    │
-│  TYPES           Money, Celsius, PSI, Meters, etc.             │
-│  RATIO           ratio(f, g) → RatioResult                     │
-│  CLI             newton demo | newton serve                    │
-╰────────────────────────────────────────────────────────────────╯
-```
-
----
-
-© 2025-2026 Jared Nashon Lewis · Jared Lewis Conglomerate · parcRI · Newton · tinyTalk · Ada Computing Company · Houston, Texas
-
-*"Smalltalk gave us objects. tinyTalk gives us boundaries. finfr = f/g."*
-
-**finfr.** 🍎
+*Built with Newton Supercomputer - Where 1 == 1*
