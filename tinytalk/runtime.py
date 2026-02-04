@@ -531,33 +531,37 @@ class Runtime:
                 return Value.string_val(self._to_string(left) + self._to_string(right))
             if left.type == ValueType.LIST and right.type == ValueType.LIST:
                 return Value.list_val(left.data + right.data)
-            return self._numeric_op(left, right, lambda a, b: a + b)
+            return self._numeric_op(left, right, lambda a, b: a + b, node.line)
         
         if op == '-':
-            return self._numeric_op(left, right, lambda a, b: a - b)
+            return self._numeric_op(left, right, lambda a, b: a - b, node.line)
         
         if op == '*':
             if left.type == ValueType.STRING and right.type == ValueType.INT:
                 return Value.string_val(left.data * right.data)
             if left.type == ValueType.LIST and right.type == ValueType.INT:
                 return Value.list_val(left.data * right.data)
-            return self._numeric_op(left, right, lambda a, b: a * b)
+            return self._numeric_op(left, right, lambda a, b: a * b, node.line)
         
         if op == '/':
+            if left.type == ValueType.NULL or right.type == ValueType.NULL:
+                raise TinyTalkError("Cannot perform arithmetic on null", node.line)
             if right.data == 0:
                 raise TinyTalkError("Division by zero", node.line)
             return Value.float_val(left.data / right.data)
         
         if op == '//':
+            if left.type == ValueType.NULL or right.type == ValueType.NULL:
+                raise TinyTalkError("Cannot perform arithmetic on null", node.line)
             if right.data == 0:
                 raise TinyTalkError("Division by zero", node.line)
             return Value.int_val(int(left.data // right.data))
         
         if op == '%':
-            return self._numeric_op(left, right, lambda a, b: a % b)
+            return self._numeric_op(left, right, lambda a, b: a % b, node.line)
         
         if op == '**':
-            return self._numeric_op(left, right, lambda a, b: a ** b)
+            return self._numeric_op(left, right, lambda a, b: a ** b, node.line)
         
         # Comparison
         if op == '<':
@@ -569,9 +573,10 @@ class Runtime:
         if op == '>=':
             return Value.bool_val(left.data >= right.data)
         if op == '==':
-            return Value.bool_val(left.data == right.data)
+            return self._equal(left, right)
         if op == '!=':
-            return Value.bool_val(left.data != right.data)
+            eq = self._equal(left, right)
+            return Value.bool_val(not eq.data)
         
         # Bitwise
         if op == '&':
@@ -597,8 +602,62 @@ class Runtime:
         
         raise TinyTalkError(f"Unknown operator: {op}", node.line)
     
-    def _numeric_op(self, left: Value, right: Value, op: Callable) -> Value:
+    def _equal(self, left: Value, right: Value) -> Value:
+        """Test equality with float tolerance for near-equal floats."""
+        # Same type comparison
+        if left.type == right.type:
+            # For floats, use approximate comparison
+            if left.type == ValueType.FLOAT:
+                # Use relative tolerance for float comparison
+                if left.data == right.data:
+                    return Value.bool_val(True)
+                # Check if approximately equal (handles 0.1 + 0.2 == 0.3)
+                if abs(left.data - right.data) < 1e-9:
+                    return Value.bool_val(True)
+                # Also use relative tolerance for larger numbers
+                max_val = max(abs(left.data), abs(right.data))
+                if max_val > 0 and abs(left.data - right.data) / max_val < 1e-9:
+                    return Value.bool_val(True)
+                return Value.bool_val(False)
+            # For lists, deep compare
+            if left.type == ValueType.LIST:
+                if len(left.data) != len(right.data):
+                    return Value.bool_val(False)
+                for l, r in zip(left.data, right.data):
+                    if not self._equal(l, r).data:
+                        return Value.bool_val(False)
+                return Value.bool_val(True)
+            # For maps, deep compare
+            if left.type == ValueType.MAP:
+                if set(left.data.keys()) != set(right.data.keys()):
+                    return Value.bool_val(False)
+                for k in left.data:
+                    if not self._equal(left.data[k], right.data[k]).data:
+                        return Value.bool_val(False)
+                return Value.bool_val(True)
+            # Default equality
+            return Value.bool_val(left.data == right.data)
+        
+        # Cross-type: int and float can be equal
+        if (left.type == ValueType.INT and right.type == ValueType.FLOAT) or \
+           (left.type == ValueType.FLOAT and right.type == ValueType.INT):
+            # Use the same tolerance for cross-type comparison
+            diff = abs(float(left.data) - float(right.data))
+            if diff < 1e-9:
+                return Value.bool_val(True)
+            return Value.bool_val(float(left.data) == float(right.data))
+        
+        # Different types are not equal
+        return Value.bool_val(False)
+    
+    def _numeric_op(self, left: Value, right: Value, op: Callable, line: int = 0) -> Value:
         """Apply numeric operation."""
+        # Check for null operands - give friendly error
+        if left.type == ValueType.NULL:
+            raise TinyTalkError(f"Cannot perform arithmetic on null", line)
+        if right.type == ValueType.NULL:
+            raise TinyTalkError(f"Cannot perform arithmetic on null", line)
+        
         result = op(left.data, right.data)
         if isinstance(result, float) and result.is_integer() and \
            left.type == ValueType.INT and right.type == ValueType.INT:
@@ -865,8 +924,21 @@ class Runtime:
         
         raise TinyTalkError(f"Cannot access '.{node.field}' on {obj.type.value}", node.line)
     
-    def _to_string(self, val: Value) -> str:
-        """Convert value to string - used for auto-coercion."""
+    def _to_string(self, val: Value, seen: set = None) -> str:
+        """Convert value to string - used for auto-coercion.
+        
+        Uses 'seen' set to detect circular references.
+        """
+        if seen is None:
+            seen = set()
+        
+        # Check for circular reference
+        val_id = id(val.data) if val.type in (ValueType.LIST, ValueType.MAP) else None
+        if val_id is not None:
+            if val_id in seen:
+                return "[circular]" if val.type == ValueType.LIST else "{circular}"
+            seen = seen | {val_id}  # Create new set to avoid mutation
+        
         if val.type == ValueType.STRING:
             return val.data
         if val.type == ValueType.NULL:
@@ -874,10 +946,10 @@ class Runtime:
         if val.type == ValueType.BOOLEAN:
             return "true" if val.data else "false"
         if val.type == ValueType.LIST:
-            items = ', '.join(self._to_string(v) for v in val.data)
+            items = ', '.join(self._to_string(v, seen) for v in val.data)
             return f"[{items}]"
         if val.type == ValueType.MAP:
-            pairs = ', '.join(f"{k}: {self._to_string(v)}" for k, v in val.data.items())
+            pairs = ', '.join(f"{k}: {self._to_string(v, seen)}" for k, v in val.data.items())
             return f"{{{pairs}}}"
         return str(val.data)
     

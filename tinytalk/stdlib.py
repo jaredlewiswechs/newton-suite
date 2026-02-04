@@ -41,13 +41,23 @@ def builtin_show(args: List[Value]) -> Value:
     show "x is" 42         -> x is 42  
     show name "has" count  -> Newton has 42
     """
-    output = ' '.join(_format_value(a) for a in args)
+    output = ' '.join(_format_value(a, set()) for a in args)
     print(output)
     return Value.null_val()
 
 
-def _format_value(val: Value) -> str:
-    """Format a value for printing."""
+def _format_value(val: Value, seen: set = None) -> str:
+    """Format a value for printing with circular reference detection."""
+    if seen is None:
+        seen = set()
+    
+    # Check for circular reference
+    val_id = id(val.data) if val.type in (ValueType.LIST, ValueType.MAP) else None
+    if val_id is not None:
+        if val_id in seen:
+            return "[circular]" if val.type == ValueType.LIST else "{circular}"
+        seen = seen | {val_id}  # Create new set to avoid mutation
+    
     if val.type == ValueType.STRING:
         return val.data
     if val.type == ValueType.NULL:
@@ -55,10 +65,10 @@ def _format_value(val: Value) -> str:
     if val.type == ValueType.BOOLEAN:
         return "true" if val.data else "false"
     if val.type == ValueType.LIST:
-        items = ', '.join(_format_value(v) for v in val.data)
+        items = ', '.join(_format_value(v, seen) for v in val.data)
         return f"[{items}]"
     if val.type == ValueType.MAP:
-        pairs = ', '.join(f"{k}: {_format_value(v)}" for k, v in val.data.items())
+        pairs = ', '.join(f"{k}: {_format_value(v, seen)}" for k, v in val.data.items())
         return f"{{{pairs}}}"
     return str(val.data)
 
