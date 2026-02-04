@@ -101,26 +101,161 @@ def get_examples():
     """Get example programs - using ultra-clean tinyTalk syntax."""
     examples = [
         {
-            'name': 'Hello World',
-            'code': '''// The cleanest Hello World
+            'name': '👋 Hello World',
+            'code': '''// Welcome to tinyTalk!
+// The friendliest programming language
+
 show("Hello World!")
-show("Welcome to tinyTalk!")'''
+
+// Space-separated args - no commas needed!
+let name = "Newton"
+show("Welcome" name "to tinyTalk!")'''
         },
         {
-            'name': '📜 when (Facts)',
-            'code': '''// WHEN - Declares immutable facts
+            'name': '📖 Tutorial: Basics',
+            'code': '''// ═══════════════════════════════════════
+// TUTORIAL 1: The Basics
+// ═══════════════════════════════════════
 
-when answer = 42
-when name = "Newton"
-when pi = 3.14159
+// Variables with 'let'
+let greeting = "Hello"
+let number = 42
+let pi = 3.14159
 
-// show() auto-converts everything!
-show("The answer is", answer)
-show("Name:", name)
-show("Pi:", pi)
+// show() prints anything - spaces between args
+show("greeting:" greeting)
+show("number:" number)
+show("pi:" pi)
 
-// Or use + with .str for concat
-show("Combined: " + name + " says " + answer.str)'''
+// Math just works
+show("")
+show("=== Math ===")
+show("2 + 3 =" (2 + 3))
+show("10 / 4 =" (10 / 4))
+show("2 ** 8 =" (2 ** 8))
+
+// Strings
+show("")
+show("=== Strings ===")
+let name = "Alice"
+show("Hello" name)
+show("Name length:" name.len)
+show("Uppercase:" name.upper)'''
+        },
+        {
+            'name': '📖 Tutorial: Functions',
+            'code': '''// ═══════════════════════════════════════
+// TUTORIAL 2: Functions
+// ═══════════════════════════════════════
+
+// LAW = pure function (no side effects)
+law square(x)
+    reply x * x
+end
+
+law greet(name)
+    reply "Hello " + name + "!"
+end
+
+show("square(5) =" square(5))
+show(greet("World"))
+
+// Functions can call functions
+law sum_of_squares(a, b)
+    reply square(a) + square(b)
+end
+
+show("sum_of_squares(3, 4) =" sum_of_squares(3, 4))
+
+// Recursion works too
+law factorial(n)
+    if n <= 1 { reply 1 }
+    reply n * factorial(n - 1)
+end
+
+show("")
+show("=== Factorials ===")
+for i in range(1, 8) {
+    show(i.str + "! =" factorial(i))
+}'''
+        },
+        {
+            'name': '📖 Tutorial: Collections',
+            'code': '''// ═══════════════════════════════════════
+// TUTORIAL 3: Lists & Maps
+// ═══════════════════════════════════════
+
+// Lists
+let fruits = ["apple", "banana", "cherry"]
+show("Fruits:" fruits)
+show("First:" fruits.first)
+show("Last:" fruits.last)
+show("Length:" fruits.len)
+
+// Loop through lists
+show("")
+show("=== Each fruit ===")
+for fruit in fruits {
+    show("-" fruit)
+}
+
+// Maps (like dictionaries)
+let person = {
+    "name": "Alice",
+    "age": 30,
+    "city": "NYC"
+}
+
+show("")
+show("=== Person ===")
+show("Name:" person.name)
+show("Age:" person.age)
+show("City:" person.city)
+
+// Add to map
+person.country = "USA"
+show("Country:" person.country)'''
+        },
+        {
+            'name': '📖 Tutorial: Control Flow',
+            'code': '''// ═══════════════════════════════════════
+// TUTORIAL 4: Control Flow
+// ═══════════════════════════════════════
+
+// If statements
+let age = 25
+
+if age >= 18 {
+    show("You are an adult")
+} else {
+    show("You are a minor")
+}
+
+// For loops
+show("")
+show("=== Countdown ===")
+for i in range(5, 0, -1) {
+    show(i)
+}
+show("Liftoff!")
+
+// While loops
+show("")
+show("=== Doubling ===")
+let x = 1
+while x < 100 {
+    show(x)
+    x = x * 2
+}
+
+// Break and continue
+show("")
+show("=== Skip evens, stop at 7 ===")
+for i in range(10) {
+    if i % 2 == 0 { continue }
+    if i > 7 { break }
+    show(i)
+}'''
         },
         {
             'name': '🔧 Property Magic',
@@ -130,46 +265,66 @@ show("Combined: " + name + " says " + answer.str)'''
 // x.int  -> to integer
 // x.bool -> to boolean
 // x.type -> type name
-// x.len  -> length
 
 let num = 42
 let text = "3.14"
-let flag = true
 
 show("=== Type Conversions ===")
-show("num.str:", num.str)
-show("text.num:", text.num)
-show("text.int:", text.int)
-show("flag.int:", flag.int)
-show("num.type:", num.type)
+show("num.str:" num.str)
+show("text.num:" text.num)
+show("text.int:" text.int)
+show("num.type:" num.type)
 
 show("")
 show("=== String Properties ===")
 let msg = "  hello world  "
-show("original:", msg)
-show("trimmed:", msg.trim)
-show("upper:", msg.upper)
-show("len:", msg.len)
+show("original:" msg)
+show("trimmed:" msg.trim)
+show("upper:" msg.upper)
+show("len:" msg.len)
 
 show("")
 show("=== List Properties ===")
 let items = [1, 2, 3, 4, 5]
-show("items:", items)
-show("first:", items.first)
-show("last:", items.last)
-show("len:", items.len)
-show("empty:", items.empty)
+show("items:" items)
+show("first:" items.first)
+show("last:" items.last)
+show("empty:" items.empty)'''
+        },
+        {
+            'name': '📜 when (Constants)',
+            'code': '''// WHEN - Declares immutable facts
+// (Cannot be changed after creation)
+
+when PI = 3.14159
+when GRAVITY = 9.81
+when APP_NAME = "MyApp"
+
+show("PI:" PI)
+show("Gravity:" GRAVITY)
+show("App:" APP_NAME)
+
+// Calculate with constants
+law circle_area(radius)
+    reply PI * radius * radius
+end
 
 show("")
-show("=== String Concat ===")
-show("The number is " + num.str + "!")'''
+show("=== Circle Areas ===")
+for r in range(1, 6) {
+    show("radius" r "-> area" circle_area(r))
+}
+
+// Try uncommenting this - you'll get an error!
+// PI = 3.0  // ERROR: Cannot reassign constant'''
         },
         {
             'name': '🔨 forge (Actions)',
             'code': '''// FORGE - Actions that can change state
+// Use when you need side effects
 
 forge greet(name)
-    show("Hello", name)
+    show("Hello" name "!")
     reply "greeted"
 end
 
@@ -179,7 +334,6 @@ forge countdown(n)
         n = n - 1
     }
     show("Liftoff!")
-    reply "done"
 end
 
 greet("World")
@@ -189,6 +343,7 @@ countdown(5)'''
         {
             'name': '⚖️ law (Pure Functions)',
             'code': '''// LAW - Pure functions, no side effects
+// Same input = same output, always
 
 law square(x)
     reply x * x
@@ -203,13 +358,13 @@ law is_even(n)
     reply n % 2 == 0
 end
 
-show("square(5):", square(5))
-show("factorial(6):", factorial(6))
-show("is_even(4):", is_even(4))
-show("is_even(7):", is_even(7))'''
+show("square(5):" square(5))
+show("factorial(6):" factorial(6))
+show("is_even(4):" is_even(4))
+show("is_even(7):" is_even(7))'''
         },
         {
-            'name': 'Fibonacci',
+            'name': '🔢 Fibonacci',
             'code': '''// Fibonacci - clean and simple
 
 law fib(n)
@@ -217,14 +372,14 @@ law fib(n)
     reply fib(n - 1) + fib(n - 2)
 end
 
-show("Fibonacci sequence:")
+show("=== Fibonacci Sequence ===")
 for i in range(12) {
-    show("fib(" + i.str + ") =", fib(i))
+    show("fib(" i.str ") =" fib(i))
 }'''
         },
         {
-            'name': 'FizzBuzz',
-            'code': '''// FizzBuzz
+            'name': '🎯 FizzBuzz',
+            'code': '''// The classic interview question
 
 law fizzbuzz(n)
     if n % 15 == 0 { reply "FizzBuzz" }
@@ -233,14 +388,14 @@ law fizzbuzz(n)
     reply n
 end
 
-show("FizzBuzz 1 to 20:")
+show("=== FizzBuzz 1-20 ===")
 for i in range(1, 21) {
     show(fizzbuzz(i))
 }'''
         },
         {
-            'name': 'Primes',
-            'code': '''// Prime numbers
+            'name': '🔍 Prime Numbers',
+            'code': '''// Find prime numbers
 
 law is_prime(n)
     if n < 2 { reply false }
@@ -250,39 +405,46 @@ law is_prime(n)
     reply true
 end
 
-show("Primes up to 30:")
-for n in range(2, 31) {
+show("=== Primes up to 50 ===")
+let primes = []
+for n in range(2, 51) {
     if is_prime(n) {
-        show(n)
+        primes = primes + [n]
     }
-}'''
-        },
-        {
-            'name': 'Collections',
-            'code': '''// Working with collections
-
-let numbers = [1, 2, 3, 4, 5]
-let fruits = ["apple", "banana", "cherry"]
-
-show("Numbers:", numbers)
-show("Length:", numbers.len)
-show("First:", numbers.first)
-show("Last:", numbers.last)
-
-show("")
-show("Fruits:")
-for fruit in fruits {
-    show("  -", fruit)
 }
-
-// Maps
-let person = {"name": "Newton", "age": 384}
+show(primes)
 show("")
-show("Person:", person)'''
+show("Found" primes.len "primes")'''
         },
         {
-            'name': 'Calculator',
-            'code': '''// Simple calculator
+            'name': '📊 Quicksort',
+            'code': '''// Quicksort algorithm
+
+law quicksort(arr)
+    if arr.len <= 1 { reply arr }
+    
+    let pivot = arr[0]
+    let less = []
+    let greater = []
+    
+    for i in range(1, arr.len) {
+        if arr[i] < pivot {
+            less = less + [arr[i]]
+        } else {
+            greater = greater + [arr[i]]
+        }
+    }
+    
+    reply quicksort(less) + [pivot] + quicksort(greater)
+end
+
+let unsorted = [64, 34, 25, 12, 22, 11, 90]
+show("Unsorted:" unsorted)
+show("Sorted:" quicksort(unsorted))'''
+        },
+        {
+            'name': '🧮 Calculator',
+            'code': '''// Simple calculator with error handling
 
 law add(a, b)
     reply a + b
@@ -297,15 +459,22 @@ law multiply(a, b)
 end
 
 law divide(a, b)
-    if b == 0 { reply "error: division by zero" }
-    reply a / b
+    if b == 0 { 
+        reply {"error": "division by zero", "value": null}
+    }
+    reply {"error": null, "value": a / b}
 end
 
-show("Calculator:")
-show("10 + 5 =", add(10, 5))
-show("10 - 5 =", subtract(10, 5))
-show("10 * 5 =", multiply(10, 5))
-show("10 / 5 =", divide(10, 5))'''
+show("=== Calculator ===")
+show("10 + 5 =" add(10, 5))
+show("10 - 5 =" subtract(10, 5))
+show("10 * 5 =" multiply(10, 5))
+
+let result = divide(10, 5)
+show("10 / 5 =" result.value)
+
+let bad = divide(10, 0)
+show("10 / 0 =" bad.error)'''
         },
     ]
     return jsonify(examples)

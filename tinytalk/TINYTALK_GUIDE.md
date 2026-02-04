@@ -56,6 +56,27 @@ show("Hello, World!")
 
 That's it. No imports, no main function, no semicolons required.
 
+### The Friendliest Syntax
+
+tinyTalk has **space-separated arguments** — no commas or `+` needed:
+
+```tinytalk
+let name = "Alice"
+let age = 25
+
+show("Hello" name)              // Hello Alice
+show("You are" age "years old")  // You are 25 years old
+```
+
+Compare to other languages:
+```python
+# Python
+print(f"Hello {name}")
+print("You are", age, "years old")
+```
+
+tinyTalk reads like English.
+
 ---
 
 ## 2. Getting Started
@@ -85,6 +106,121 @@ python -m tinytalk run program.tt
 /* This is a
    multi-line comment */
 ```
+
+---
+
+## Quick Tutorial: Learn tinyTalk in 5 Minutes
+
+### Lesson 1: Hello World
+
+```tinytalk
+show("Hello World!")
+```
+
+That's it! `show()` prints to the screen.
+
+### Lesson 2: Variables
+
+```tinytalk
+let name = "Alice"          // Mutable variable
+when PI = 3.14159           // Immutable constant
+
+name = "Bob"                // OK - let can change
+// PI = 3.0                 // ERROR - when cannot change
+```
+
+### Lesson 3: Printing with show()
+
+tinyTalk's `show()` is special — space-separated args, no commas needed:
+
+```tinytalk
+let name = "Newton"
+let age = 384
+
+// These all work:
+show("Hello" name)                  // Hello Newton
+show(name "is" age "years old")     // Newton is 384 years old
+show("1 + 2 =" (1 + 2))             // 1 + 2 = 3
+```
+
+### Lesson 4: Property Conversions
+
+No need for `str()` or `int()` functions — use properties:
+
+```tinytalk
+let num = 42
+let text = "3.14"
+
+show(num.str)       // "42"
+show(num.type)      // "int"
+show(text.num)      // 3.14
+show(text.int)      // 3
+
+// String properties
+let s = "  HELLO  "
+show(s.trim)        // "HELLO"
+show(s.lower)       // "  hello  "
+show(s.len)         // 9
+```
+
+### Lesson 5: Functions
+
+Two types: `law` (pure) and `forge` (with side effects):
+
+```tinytalk
+// LAW - pure function, no side effects
+law square(x)
+    reply x * x
+end
+
+// FORGE - action, can have side effects
+forge greet(name)
+    show("Hello" name "!")
+end
+
+show(square(5))     // 25
+greet("World")      // Hello World !
+```
+
+### Lesson 6: Control Flow
+
+```tinytalk
+// If statement
+if age >= 18 {
+    show("Adult")
+} else {
+    show("Minor")
+}
+
+// For loop
+for i in range(5) {
+    show(i)         // 0, 1, 2, 3, 4
+}
+
+// While loop
+let x = 1
+while x < 10 {
+    show(x)
+    x = x * 2
+}
+```
+
+### Lesson 7: Collections
+
+```tinytalk
+// Lists
+let fruits = ["apple", "banana", "cherry"]
+show(fruits[0])         // apple
+show(fruits.first)      // apple
+show(fruits.last)       // cherry
+
+// Maps
+let person = {"name": "Alice", "age": 30}
+show(person.name)       // Alice
+show(person["age"])     // 30
+```
+
+**You're ready!** Explore the examples in the IDE for more.
 
 ---
 
@@ -693,11 +829,21 @@ show("Square?", square.is_square())  // true
 |----------|-------------|
 | `show(args...)` | Print values with spaces, newline at end |
 
+**Space-separated arguments (preferred):**
 ```tinytalk
-show("Hello")               // Hello
-show("x =", 42)             // x = 42
-show(1, 2, 3)               // 1 2 3
+show("Hello" name)          // Hello Alice
+show("x =" 42)               // x = 42
+show(1 2 3)                  // 1 2 3
+show("Sum:" a "+" b "=" (a + b))  // Sum: 3 + 4 = 7
 ```
+
+**Comma-separated also works:**
+```tinytalk
+show("Hello", name)         // Hello Alice
+show("x =", 42)              // x = 42
+```
+
+No `+` or `.str` needed — `show()` auto-converts everything!
 
 ### Type Functions
 

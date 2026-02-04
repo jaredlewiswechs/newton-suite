@@ -1305,13 +1305,34 @@ class Parser:
         return expr
     
     def _parse_args(self) -> List[ASTNode]:
-        """Parse function call arguments."""
+        """Parse function call arguments.
+        
+        Supports both comma-separated and space-separated arguments:
+            show("hello", name)   -- comma separated (traditional)
+            show("hello" name)    -- space separated (friendly)
+            show "hello" name     -- also works
+        """
         args = [self._parse_expression()]
         
-        while self._match(TokenType.COMMA):
-            args.append(self._parse_expression())
+        while True:
+            # Traditional comma separator
+            if self._match(TokenType.COMMA):
+                args.append(self._parse_expression())
+            # Space-separated: if next token is a valid expression start, treat as another arg
+            elif self._can_start_expression() and not self._check(TokenType.RPAREN):
+                args.append(self._parse_expression())
+            else:
+                break
         
         return args
+    
+    def _can_start_expression(self) -> bool:
+        """Check if current token can start an expression (for space-separated args)."""
+        return self._check(
+            TokenType.NUMBER, TokenType.STRING, TokenType.BOOLEAN, TokenType.NULL,
+            TokenType.IDENTIFIER, TokenType.LPAREN, TokenType.LBRACKET, TokenType.LBRACE,
+            TokenType.MINUS, TokenType.NOT, TokenType.BIT_NOT
+        )
     
     def _parse_primary(self) -> ASTNode:
         """Parse primary expression."""

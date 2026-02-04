@@ -645,21 +645,21 @@
 
 show("Hello World!")
 
-// Facts with when
-when answer = 42
-when name = "Newton"
+// Variables
+let name = "Newton"
+let age = 384
 
-// show() auto-converts everything
-show("The answer is", answer)
-show("Name:", name)
+// show() with space-separated args - no commas needed!
+show("Hello" name)
+show(name "is" age "years old")
 
-// Property conversions - no str() needed!
+// Property conversions - no function calls!
 show("")
-show("answer.str:", answer.str)
-show("answer.type:", answer.type)
-
-// String concat with .str
-show("Result: " + name + " says " + answer.str)
+show("=== Property Magic ===")
+show("name.len:" name.len)
+show("name.upper:" name.upper)
+show("age.str:" age.str)
+show("age.type:" age.type)
 
 // Pure functions with law
 law fib(n)
@@ -668,9 +668,9 @@ law fib(n)
 end
 
 show("")
-show("Fibonacci:")
+show("=== Fibonacci ===")
 for i in range(10) {
-    show("fib(" + i.str + ") =", fib(i))
+    show("fib(" i.str ") =" fib(i))
 }
 `,
                 language: 'tinytalk',
