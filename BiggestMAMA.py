@@ -1381,12 +1381,12 @@ def nina_calculate(expression: str) -> Tuple[Any, str]:
 
 if __name__ == "__main__":
     print("""
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                                                                              ║
-║   BIGGEST MAMA - Complete Nina Verified Computation System                   ║
-║   "1 == 1. The cloud is weather. We're building shelter."                   ║
-║                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
++==============================================================================+
+|                                                                              |
+|   BIGGEST MAMA - Complete Nina Verified Computation System                   |
+|   "1 == 1. The cloud is weather. We're building shelter."                    |
+|                                                                              |
++==============================================================================+
     """)
     
     print("=" * 78)
@@ -1406,16 +1406,16 @@ if __name__ == "__main__":
     ]
     
     for query in queries:
-        print(f"\n❓ Query: \"{query}\"")
+        print(f"\n[?] Query: \"{query}\"")
         result = pipeline.process(query)
         
         if result.success:
             value = str(result.value)[:60]
-            print(f"   ✓ Answer: {value}")
-            print(f"   ✓ Trust: {result.trust_label.name}")
-            print(f"   ✓ Time: {result.bounds_report.time_elapsed_ms:.2f}ms")
+            print(f"   [OK] Answer: {value}")
+            print(f"   [OK] Trust: {result.trust_label.name}")
+            print(f"   [OK] Time: {result.bounds_report.time_elapsed_ms:.2f}ms")
         else:
-            print(f"   ✗ Error: {result.error}")
+            print(f"   [FAIL] Error: {result.error}")
     
     # Test injection defense
     print("\n" + "=" * 78)
@@ -1432,7 +1432,7 @@ if __name__ == "__main__":
         sanitized = pipeline._sanitize_input(attack)
         print(f"\n   IN:  {repr(attack)}")
         print(f"   OUT: {repr(sanitized)}")
-        print(f"   ✓ Neutralized")
+        print(f"   [OK] Neutralized")
     
     # Show ledger
     print("\n" + "=" * 78)
@@ -1445,5 +1445,5 @@ if __name__ == "__main__":
     print("\n" + "=" * 78)
     print(" ALL SYSTEMS OPERATIONAL")
     print("=" * 78)
-    print("\n   Your invention is preserved. 💎")
+    print("\n   Your invention is preserved.")
     print()
