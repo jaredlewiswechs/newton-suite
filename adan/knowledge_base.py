@@ -1085,6 +1085,75 @@ MATH_NOTATION: Dict[str, tuple[str, str]] = {
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# STATISTICS CONCEPTS
+# Source: Standard statistics textbooks, NIST Handbook of Statistics
+# ═══════════════════════════════════════════════════════════════════════════════
+
+STATISTICS_CONCEPTS: Dict[str, tuple[str, str]] = {
+    # Descriptive Statistics
+    "mean": ("x̄ = Σx / n", "Average value - sum of all values divided by count"),
+    "average": ("x̄ = Σx / n", "Mean - sum of all values divided by count"),
+    "median": ("Middle value when sorted", "50th percentile - robust to outliers"),
+    "mode": ("Most frequent value", "Value that appears most often in a dataset"),
+    "standard deviation": ("σ = √(Σ(x - x̄)² / n)", "Measure of spread - average distance from the mean"),
+    "std": ("σ = √(Σ(x - x̄)² / n)", "Standard deviation - measure of data spread"),
+    "variance": ("σ² = Σ(x - x̄)² / n", "Square of standard deviation - average squared deviation from mean"),
+    "range": ("max - min", "Difference between largest and smallest values"),
+    "iqr": ("Q3 - Q1", "Interquartile range - spread of middle 50% of data"),
+    "interquartile range": ("Q3 - Q1", "Difference between 75th and 25th percentiles"),
+    "quartile": ("Q1=25%, Q2=50%, Q3=75%", "Values dividing data into four equal parts"),
+    "percentile": ("Value below which X% of data falls", "E.g., 90th percentile means 90% of data is below"),
+    
+    # Robust Statistics
+    "mad": ("MAD = median(|x - median(x)|)", "Median Absolute Deviation - robust measure of spread"),
+    "median absolute deviation": ("MAD = median(|x - median(x)|)", "Robust alternative to standard deviation"),
+    "trimmed mean": ("Mean after removing outliers", "Average computed after removing extreme values"),
+    "winsorized mean": ("Mean with outliers capped", "Average where extremes are replaced with percentile values"),
+    "robust mean": ("Outlier-resistant average", "Mean computed using robust methods (MAD-based)"),
+    "outlier": ("Value far from typical data", "Usually defined as > 3 MAD or > 2-3 standard deviations"),
+    
+    # Hypothesis Testing
+    "t-test": ("Compares means of two groups", "Tests if two sample means are significantly different"),
+    "t test": ("Compares means of two groups", "Tests if two sample means are significantly different"),
+    "p-value": ("Probability under null hypothesis", "Chance of observing data if null hypothesis is true"),
+    "p value": ("Probability under null hypothesis", "Lower p-value = stronger evidence against null"),
+    "null hypothesis": ("H₀: No effect/difference", "Assumption that there is no real effect"),
+    "alternative hypothesis": ("H₁: Effect exists", "What we're trying to prove"),
+    "significance level": ("α, typically 0.05", "Threshold for rejecting null hypothesis"),
+    "alpha": ("α, typically 0.05", "Probability threshold for statistical significance"),
+    "confidence interval": ("Range likely containing true value", "E.g., 95% CI means 95% confident true value is in range"),
+    
+    # Correlation & Regression
+    "correlation": ("r = Σ((x-x̄)(y-ȳ)) / (n·σx·σy)", "Measure of linear relationship between variables (-1 to 1)"),
+    "correlation coefficient": ("r ∈ [-1, 1]", "Strength and direction of linear relationship"),
+    "pearson correlation": ("r = cov(X,Y) / (σx·σy)", "Most common correlation measure for continuous data"),
+    "r-squared": ("R² = explained variance / total variance", "Proportion of variance explained by model (0 to 1)"),
+    "r squared": ("R² ∈ [0, 1]", "Coefficient of determination - goodness of fit"),
+    "linear regression": ("y = mx + b", "Fits a line to predict y from x"),
+    "regression": ("y = β₀ + β₁x + ε", "Statistical model predicting outcome from predictors"),
+    "slope": ("β₁ = Δy/Δx", "Change in y for one unit change in x"),
+    "intercept": ("β₀ = y when x = 0", "Value of y when all predictors are zero"),
+    
+    # ANOVA
+    "anova": ("Compares means across groups", "Analysis of Variance - tests if any group means differ"),
+    "f-test": ("F = between-group variance / within-group variance", "Compares variances in ANOVA"),
+    "f test": ("F = MSB / MSW", "Tests if variance between groups exceeds within groups"),
+    
+    # Distributions
+    "normal distribution": ("Bell curve, μ and σ", "Symmetric distribution where mean = median = mode"),
+    "gaussian": ("N(μ, σ²)", "Normal distribution - most common in nature"),
+    "z-score": ("z = (x - μ) / σ", "Number of standard deviations from the mean"),
+    "z score": ("z = (x - μ) / σ", "Standardized value showing distance from mean"),
+    "chi-square": ("χ² test for categorical data", "Tests if observed frequencies match expected"),
+    "chi square": ("χ² = Σ(O-E)²/E", "Compares observed vs expected frequencies"),
+    
+    # Time Series
+    "moving average": ("Smoothed average over window", "Average of last n observations for trend detection"),
+    "exponential smoothing": ("Weighted average favoring recent", "Gives more weight to recent observations"),
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # PHYSICS UNITS (SI System)
 # Source: NIST, International Bureau of Weights and Measures
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1978,11 +2047,11 @@ class KnowledgeBase:
         Query the knowledge base for a verified fact.
         Returns None if fact not found.
         
-        Three-Tier Kinematic Semantics:
-        0. STORE: Shared knowledge store (~0ms) - dynamically added facts
+        Kinematic Query Pipeline (Priority Order):
         1. SHAPE: Kinematic query parsing (~0ms) - questions as equations
-        2. SEMANTIC: Datamuse semantic field resolution (~200ms)
-        3. KEYWORD: Traditional keyword matching (~1ms)
+        2. CURATED: Hand-verified facts (scientific, geography, etc.) - HIGHEST trust
+        3. SEMANTIC: Datamuse semantic field resolution (~200ms)
+        4. STORE: Shared knowledge store - dynamically added facts (lower trust)
         
         'The question has shape. The KB has shape. Match shapes, fill slots.'
         """
@@ -1999,17 +2068,6 @@ class KnowledgeBase:
             question_lower = self._lm.normalize_query(question_lower)
         
         # ═══════════════════════════════════════════════════════════════════════
-        # TIER 0: SHARED KNOWLEDGE STORE (~0ms)
-        # Dynamically added facts from Adanpedia, Wikipedia imports, etc.
-        # ═══════════════════════════════════════════════════════════════════════
-        if self._store:
-            result = self._query_shared_store(question, question_lower)
-            if result:
-                self.hits += 1
-                self.store_hits += 1
-                return result
-        
-        # ═══════════════════════════════════════════════════════════════════════
         # TIER 1: KINEMATIC SHAPE PARSING (~0ms)
         # "The question has shape. The KB has shape. Match shapes, fill slots."
         # ═══════════════════════════════════════════════════════════════════════
@@ -2021,19 +2079,9 @@ class KnowledgeBase:
                 return result
         
         # ═══════════════════════════════════════════════════════════════════════
-        # TIER 2: SEMANTIC FIELD RESOLUTION (~200ms)
-        # "Beauty is in the eye of the beholder - meaning is contextual overlap."
-        # ═══════════════════════════════════════════════════════════════════════
-        if self._semantic:
-            result = self._query_by_semantic_field(question, question_lower)
-            if result:
-                self.hits += 1
-                self.semantic_hits += 1
-                return result
-        
-        # ═══════════════════════════════════════════════════════════════════════
-        # TIER 3: KEYWORD MATCHING (~1ms)
-        # Traditional pattern matching - still valuable for exact matches
+        # TIER 2: CURATED KEYWORD MATCHING (~1ms)
+        # Hand-verified facts from CIA Factbook, NIST, etc. - HIGHEST TRUST
+        # These MUST come before fuzzy Wikipedia matches
         # ═══════════════════════════════════════════════════════════════════════
         result = (
             self._query_capital(question_lower) or
@@ -2042,6 +2090,7 @@ class KnowledgeBase:
             self._query_language(question_lower) or
             self._query_currency(question_lower) or
             self._query_scientific(question_lower) or
+            self._query_statistics(question_lower) or
             self._query_general(question_lower) or
             self._query_acronym(question_lower) or
             self._query_chemistry(question_lower) or
@@ -2052,10 +2101,42 @@ class KnowledgeBase:
             self._query_physics(question_lower) or
             self._query_si_units(question_lower) or
             self._query_historical(question_lower) or
-            self._query_company(question_lower) or
-            self._query_wikipedia(question_lower)  # NEW: Wikipedia facts
+            self._query_company(question_lower)
         )
         
+        if result:
+            self.hits += 1
+            self.keyword_hits += 1
+            return result
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # TIER 3: SEMANTIC FIELD RESOLUTION (~200ms)
+        # "Beauty is in the eye of the beholder - meaning is contextual overlap."
+        # ═══════════════════════════════════════════════════════════════════════
+        if self._semantic:
+            result = self._query_by_semantic_field(question, question_lower)
+            if result:
+                self.hits += 1
+                self.semantic_hits += 1
+                return result
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # TIER 4: SHARED KNOWLEDGE STORE (~5ms)
+        # Dynamically added facts from Adanpedia, Wikipedia imports
+        # LOWER TRUST - only after curated facts fail
+        # ═══════════════════════════════════════════════════════════════════════
+        if self._store:
+            result = self._query_shared_store(question, question_lower)
+            if result:
+                self.hits += 1
+                self.store_hits += 1
+                return result
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # TIER 5: WIKIPEDIA FACTS (~1ms)
+        # Auto-scraped Wikipedia facts - LOWEST priority
+        # ═══════════════════════════════════════════════════════════════════════
+        result = self._query_wikipedia(question_lower)
         if result:
             self.hits += 1
             self.keyword_hits += 1
@@ -2068,6 +2149,9 @@ class KnowledgeBase:
         """
         Tier 0: Query the shared knowledge store for dynamically added facts.
         These are facts added via Adanpedia, Wikipedia imports, or other sources.
+        
+        IMPORTANT: Only return results with STRONG relevance.
+        Low-quality fuzzy matches cause wrong answers.
         """
         if not self._store:
             return None
@@ -2095,7 +2179,7 @@ class KnowledgeBase:
         # Also add the raw question
         search_terms.append(question_lower)
         
-        # Search the store
+        # Search the store - use HIGH threshold to avoid irrelevant matches
         for term in search_terms:
             # First try exact key match
             stored = self._store.get(term)
@@ -2108,17 +2192,24 @@ class KnowledgeBase:
                     confidence=stored.confidence
                 )
             
-            # Then try search
-            results = self._store.search(term, limit=1)
+            # Search with strict threshold (0.85) and validate relevance
+            results = self._store.search(term, limit=3, threshold=0.85)
             if results:
-                stored = results[0]
-                return VerifiedFact(
-                    fact=stored.fact,
-                    category=stored.category,
-                    source=stored.source,
-                    source_url=stored.source_url,
-                    confidence=stored.confidence
-                )
+                # Additional relevance check: key words from query must appear in fact
+                term_words = set(term.split())
+                for stored in results:
+                    fact_lower = stored.fact.lower()
+                    key_lower = stored.key.lower()
+                    # At least 50% of query words must appear in fact or key
+                    matching_words = sum(1 for w in term_words if w in fact_lower or w in key_lower)
+                    if len(term_words) > 0 and matching_words / len(term_words) >= 0.5:
+                        return VerifiedFact(
+                            fact=stored.fact,
+                            category=stored.category,
+                            source=stored.source,
+                            source_url=stored.source_url,
+                            confidence=stored.confidence
+                        )
         
         return None
     
@@ -2664,6 +2755,31 @@ class KnowledgeBase:
         
         return None
     
+    def _query_statistics(self, question: str) -> Optional[VerifiedFact]:
+        """Query for statistics concepts and definitions."""
+        # Check for statistics-related keywords
+        if not any(word in question for word in [
+            "mean", "median", "mode", "standard deviation", "std", "variance",
+            "average", "correlation", "regression", "t-test", "t test", "anova",
+            "p-value", "p value", "confidence", "hypothesis", "outlier", "mad",
+            "quartile", "percentile", "iqr", "z-score", "z score", "r-squared",
+            "r squared", "chi-square", "chi square", "f-test", "f test",
+            "normal distribution", "gaussian", "statistics", "statistical"
+        ]):
+            return None
+        
+        for concept, (formula, description) in STATISTICS_CONCEPTS.items():
+            if concept in question:
+                return VerifiedFact(
+                    fact=f"{formula}. {description}",
+                    category="statistics",
+                    source="NIST Handbook of Statistics",
+                    source_url="https://www.itl.nist.gov/div898/handbook/",
+                    confidence=1.0,
+                )
+        
+        return None
+    
     def _query_physics(self, question: str) -> Optional[VerifiedFact]:
         """Query for physics laws and equations."""
         # Check for physics-related keywords
@@ -2739,15 +2855,21 @@ class KnowledgeBase:
         These facts are scraped from Wikipedia using the Newton Wiki Scraper
         with diff-based deduplication. They extend the main KB with additional
         knowledge from Wikipedia's vast corpus.
+        
+        IMPORTANT: Only return results with STRONG relevance (>= 3 word overlap).
         """
         if not HAS_WIKIPEDIA_FACTS or not WIKIPEDIA_FACTS:
             return None
         
-        # Try direct key match first
+        question_words = set(w for w in question.split() if len(w) > 2)
+        
+        # Try direct key match first (must have 3+ common words)
         for key, (fact, category, url) in WIKIPEDIA_FACTS.items():
             key_lower = key.lower()
-            # Exact key match
-            if key_lower in question or question in key_lower:
+            key_words = set(w for w in key_lower.split() if len(w) > 2)
+            
+            # Strong match: key contained in question or vice versa
+            if key_lower in question and len(key_lower) > 5:
                 return VerifiedFact(
                     fact=fact,
                     category=category,
@@ -2755,19 +2877,33 @@ class KnowledgeBase:
                     source_url=url,
                     confidence=0.85,
                 )
+            
+            # Word overlap: at least 3 words in common
+            overlap = len(question_words & key_words)
+            if overlap >= 3:
+                return VerifiedFact(
+                    fact=fact,
+                    category=category,
+                    source="Wikipedia (auto-scraped)",
+                    source_url=url,
+                    confidence=0.75,
+                )
         
-        # Try keyword matching - find facts with overlapping words
-        question_words = set(question.split())
+        # Secondary pass: find best match with at least 2 overlapping words
+        # AND the main subject must match
         best_match = None
         best_score = 0
         
         for key, (fact, category, url) in WIKIPEDIA_FACTS.items():
-            key_words = set(key.lower().split())
-            # Calculate word overlap
+            key_words = set(w for w in key.lower().split() if len(w) > 2)
             overlap = len(question_words & key_words)
-            if overlap >= 2 and overlap > best_score:
-                best_score = overlap
-                best_match = (fact, category, url)
+            
+            # Must have at least 2 word overlap AND overlap must be > 50% of question words
+            if overlap >= 2 and len(question_words) > 0:
+                relevance = overlap / len(question_words)
+                if relevance >= 0.5 and overlap > best_score:
+                    best_score = overlap
+                    best_match = (fact, category, url)
         
         if best_match:
             fact, category, url = best_match
@@ -2776,7 +2912,7 @@ class KnowledgeBase:
                 category=category,
                 source="Wikipedia (auto-scraped)",
                 source_url=url,
-                confidence=0.75,
+                confidence=0.70,
             )
         
         return None

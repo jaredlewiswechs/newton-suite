@@ -388,7 +388,7 @@ class ReturnStmt(ASTNode):
 
 @dataclass
 class PrintStmt(ASTNode):
-    value: ASTNode
+    values: List[ASTNode]  # Changed from value to values for multiple args
 
 @dataclass
 class PropertyAccess(ASTNode):
@@ -462,13 +462,17 @@ class StatsyParser:
     
     def _print_statement(self) -> PrintStmt:
         self._advance()  # consume 'print'
+        values = []
         if self._check(TokenType.LPAREN):
-            self._advance()
-            value = self._expression()
-            self._consume(TokenType.RPAREN, "Expected ')' after print argument")
+            self._advance()  # consume '('
+            if not self._check(TokenType.RPAREN):
+                values.append(self._expression())
+                while self._match(TokenType.COMMA):
+                    values.append(self._expression())
+            self._consume(TokenType.RPAREN, "Expected ')' after print arguments")
         else:
-            value = self._expression()
-        return PrintStmt(value)
+            values.append(self._expression())
+        return PrintStmt(values)
     
     def _function_def(self) -> FunctionDef:
         self._advance()  # consume 'function' or 'fn'
@@ -920,8 +924,12 @@ class StatsyInterpreter:
             'newton_ask': self._newton_ask,
             'newton_verify': self._newton_verify,
             
-            # I/O
-            'print': print,
+            # I/O (R-like)
+            'print': self._print,
+            'cat': self._cat,
+            'paste': self._paste,
+            'paste0': self._paste0,
+            'sprintf': self._sprintf,
         })
         
         # Add visualization and advanced statistics (from statsy_viz)
@@ -1146,9 +1154,19 @@ class StatsyInterpreter:
             raise ReturnValue(value)
         
         if isinstance(node, PrintStmt):
-            value = self._evaluate(node.value)
-            print(value)
-            return value
+            # Evaluate all values and print with space separator
+            values = [self._evaluate(v) for v in node.values]
+            formatted = []
+            for v in values:
+                if v is NA:
+                    formatted.append("NA")
+                elif isinstance(v, float):
+                    formatted.append(f"{v:.6g}" if v != int(v) else str(int(v)))
+                else:
+                    formatted.append(str(v))
+            output = ' '.join(formatted)
+            print(output)
+            return values[-1] if values else None
         
         if isinstance(node, PropertyAccess):
             obj = self._evaluate(node.obj)
@@ -1370,6 +1388,7 @@ class StatsyInterpreter:
     
     # ═══════════════════════════════════════════════════════════════════════════
     # BUILT-IN STATISTICAL FUNCTIONS
+    # R-like variadic syntax: mean(1, 2, 3) OR mean(c(1,2,3)) OR mean(vec)
     # ═══════════════════════════════════════════════════════════════════════════
     
     def _to_numeric_list(self, x: Any) -> List[float]:
@@ -1382,16 +1401,43 @@ class StatsyInterpreter:
             return [x]
         return []
     
-    def _mean(self, x: Any) -> float:
-        """Calculate arithmetic mean."""
-        vals = self._to_numeric_list(x)
+    def _combine_args(self, *args) -> List[float]:
+        """Combine multiple arguments into a single numeric list.
+        
+        Supports R-like variadic syntax:
+        - mean(1, 2, 3) -> combine then compute
+        - mean(c(1,2,3)) -> use vector directly
+        - mean(x) -> use variable
+        """
+        if len(args) == 1:
+            return self._to_numeric_list(args[0])
+        # Multiple args: combine them all
+        vals = []
+        for a in args:
+            if isinstance(a, StatsyVector):
+                vals.extend(a.numeric_values())
+            elif isinstance(a, (list, tuple)):
+                vals.extend([v for v in a if isinstance(v, (int, float)) and v is not NA])
+            elif isinstance(a, (int, float)) and a is not NA:
+                vals.append(a)
+        return vals
+    
+    def _mean(self, *args) -> float:
+        """Calculate arithmetic mean.
+        
+        R-like: mean(x), mean(c(1,2,3)), mean(1, 2, 3)
+        """
+        vals = self._combine_args(*args)
         if not vals:
             return NA
         return sum(vals) / len(vals)
     
-    def _median(self, x: Any) -> float:
-        """Calculate median."""
-        vals = sorted(self._to_numeric_list(x))
+    def _median(self, *args) -> float:
+        """Calculate median.
+        
+        R-like: median(x), median(c(1,2,3)), median(1, 2, 3)
+        """
+        vals = sorted(self._combine_args(*args))
         if not vals:
             return NA
         n = len(vals)
@@ -1400,9 +1446,12 @@ class StatsyInterpreter:
             return (vals[mid - 1] + vals[mid]) / 2
         return vals[mid]
     
-    def _mode(self, x: Any) -> Any:
-        """Calculate mode."""
-        vals = self._to_numeric_list(x)
+    def _mode(self, *args) -> Any:
+        """Calculate mode.
+        
+        R-like: mode(x), mode(c(1,2,3)), mode(1, 2, 3)
+        """
+        vals = self._combine_args(*args)
         if not vals:
             return NA
         counts = {}
@@ -1410,40 +1459,65 @@ class StatsyInterpreter:
             counts[v] = counts.get(v, 0) + 1
         return max(counts, key=counts.get)
     
-    def _std(self, x: Any, ddof: int = 1) -> float:
-        """Calculate standard deviation."""
-        v = self._var(x, ddof)
+    def _std(self, *args, ddof: int = 1) -> float:
+        """Calculate standard deviation.
+        
+        R-like: std(x), std(c(1,2,3)), std(1, 2, 3)
+        """
+        # Handle ddof being passed as last positional arg
+        if args and isinstance(args[-1], int) and len(args) > 1:
+            # Check if last arg looks like ddof (0 or 1)
+            if args[-1] in (0, 1) and len(args) >= 2:
+                # Could be ddof, but also could be data
+                # Heuristic: if there are more than 2 args, assume it's data
+                pass
+        v = self._var(*args, ddof=ddof)
         if v is NA:
             return NA
         return math.sqrt(v)
     
-    def _var(self, x: Any, ddof: int = 1) -> float:
-        """Calculate variance."""
-        vals = self._to_numeric_list(x)
+    def _var(self, *args, ddof: int = 1) -> float:
+        """Calculate variance.
+        
+        R-like: var(x), var(c(1,2,3)), var(1, 2, 3)
+        """
+        vals = self._combine_args(*args)
         if len(vals) < 2:
             return NA
         m = sum(vals) / len(vals)
         ss = sum((v - m) ** 2 for v in vals)
         return ss / (len(vals) - ddof)
     
-    def _sum(self, x: Any) -> float:
-        """Calculate sum."""
-        vals = self._to_numeric_list(x)
+    def _sum(self, *args) -> float:
+        """Calculate sum.
+        
+        R-like: sum(x), sum(c(1,2,3)), sum(1, 2, 3)
+        """
+        vals = self._combine_args(*args)
         return sum(vals) if vals else 0
     
-    def _min(self, x: Any) -> float:
-        """Calculate minimum."""
-        vals = self._to_numeric_list(x)
+    def _min(self, *args) -> float:
+        """Calculate minimum.
+        
+        R-like: min(x), min(c(1,2,3)), min(1, 2, 3)
+        """
+        vals = self._combine_args(*args)
         return min(vals) if vals else NA
     
-    def _max(self, x: Any) -> float:
-        """Calculate maximum."""
-        vals = self._to_numeric_list(x)
+    def _max(self, *args) -> float:
+        """Calculate maximum.
+        
+        R-like: max(x), max(c(1,2,3)), max(1, 2, 3)
+        """
+        vals = self._combine_args(*args)
         return max(vals) if vals else NA
     
-    def _range(self, x: Any) -> StatsyVector:
-        """Calculate range [min, max]."""
-        vals = self._to_numeric_list(x)
+    def _range(self, *args) -> StatsyVector:
+        """Calculate range [min, max].
+        
+        R-like: range(x), range(c(1,2,3)), range(1, 2, 3)
+        """
+        vals = self._combine_args(*args)
         if not vals:
             return StatsyVector([NA, NA])
         return StatsyVector([min(vals), max(vals)])
@@ -1459,32 +1533,42 @@ class StatsyInterpreter:
         frac = idx - lower
         return vals[lower] * (1 - frac) + vals[upper] * frac
     
-    def _iqr(self, x: Any) -> float:
-        """Calculate interquartile range."""
-        q1 = self._quantile(x, 0.25)
-        q3 = self._quantile(x, 0.75)
+    def _iqr(self, *args) -> float:
+        """Calculate interquartile range.
+        
+        R-like: iqr(x), iqr(c(1,2,3)), iqr(1, 2, 3)
+        """
+        vals = self._combine_args(*args)
+        q1 = self._quantile(vals, 0.25)
+        q3 = self._quantile(vals, 0.75)
         if q1 is NA or q3 is NA:
             return NA
         return q3 - q1
     
-    def _mad(self, x: Any) -> float:
-        """Calculate Median Absolute Deviation (robust dispersion)."""
-        vals = self._to_numeric_list(x)
+    def _mad(self, *args) -> float:
+        """Calculate Median Absolute Deviation (robust dispersion).
+        
+        R-like: mad(x), mad(c(1,2,3)), mad(1, 2, 3)
+        """
+        vals = self._combine_args(*args)
         if not vals:
             return NA
-        med = self._median(vals)
+        med = self._median(*vals)
         deviations = [abs(v - med) for v in vals]
-        return self._median(deviations) * 1.4826  # Scale factor for normal distribution
+        return self._median(*deviations) * 1.4826  # Scale factor for normal distribution
     
-    def _robust_mean(self, x: Any, trim: float = 0.1) -> float:
-        """Calculate trimmed mean (robust central tendency)."""
-        vals = sorted(self._to_numeric_list(x))
+    def _robust_mean(self, *args, trim: float = 0.1) -> float:
+        """Calculate trimmed mean (robust central tendency).
+        
+        R-like: robust_mean(x), robust_mean(c(1,2,3)), robust_mean(1, 2, 3)
+        """
+        vals = sorted(self._combine_args(*args))
         if not vals:
             return NA
         n = len(vals)
         k = int(n * trim)
         if 2 * k >= n:
-            return self._median(vals)
+            return self._median(*vals)
         trimmed = vals[k:n-k]
         return sum(trimmed) / len(trimmed)
     
@@ -1705,6 +1789,66 @@ class StatsyInterpreter:
         print("└────────────────────────────────────────┘")
         
         return result
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # I/O FUNCTIONS (R-like)
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def _format_value(self, v: Any) -> str:
+        """Format a value for printing."""
+        if v is NA:
+            return "NA"
+        if isinstance(v, float):
+            if v == int(v):
+                return str(int(v))
+            return f"{v:.6g}"
+        if isinstance(v, StatsyVector):
+            return str(v)
+        return str(v)
+    
+    def _print(self, *args, **kwargs) -> None:
+        """Print with R-like formatting.
+        
+        Handles multiple arguments gracefully:
+        print("Mean:", mean(x))  -> Mean: 42.5
+        """
+        formatted = []
+        for a in args:
+            formatted.append(self._format_value(a))
+        print(' '.join(formatted), **kwargs)
+    
+    def _cat(self, *args, sep: str = " ", end: str = "\n") -> None:
+        """Concatenate and print (R-like cat function).
+        
+        cat("The mean is", 42, "\n")
+        """
+        formatted = [self._format_value(a) for a in args]
+        print(sep.join(formatted), end=end)
+    
+    def _paste(self, *args, sep: str = " ") -> str:
+        """Paste values together into a string (R-like).
+        
+        paste("Mean:", 42) -> "Mean: 42"
+        """
+        formatted = [self._format_value(a) for a in args]
+        return sep.join(formatted)
+    
+    def _paste0(self, *args) -> str:
+        """Paste values with no separator (R-like).
+        
+        paste0("x", 1) -> "x1"
+        """
+        return self._paste(*args, sep="")
+    
+    def _sprintf(self, fmt: str, *args) -> str:
+        """Format string (R/C-like sprintf).
+        
+        sprintf("Mean: %.2f", 42.123) -> "Mean: 42.12"
+        """
+        try:
+            return fmt % args
+        except:
+            return fmt
     
     # ═══════════════════════════════════════════════════════════════════════════
     # NEWTON INTEGRATION
