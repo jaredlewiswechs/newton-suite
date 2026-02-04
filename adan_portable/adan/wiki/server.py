@@ -538,6 +538,60 @@ def extract_facts_from_text(title: str, text: str, category: str, url: str) -> L
     return facts
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCRAPER ENDPOINT (Diff-based with link chaining)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class ScrapeRequest(BaseModel):
+    seed: str                   # Starting Wikipedia article
+    max_depth: int = 1          # How many link hops
+    max_pages: int = 10         # Max pages to scrape
+
+
+@app.post("/api/scrape")
+async def scrape_wikipedia(request: ScrapeRequest):
+    """
+    Scrape Wikipedia using Newton's kinematic extraction.
+    
+    Features:
+    - DIFF-BASED: Only stores NEW facts not already in KB
+    - LINK CHAINING: Follows related links up to max_depth
+    - SEMANTIC DEDUP: Uses fuzzy matching to avoid duplicates
+    
+    This is much more efficient than importing single pages.
+    """
+    try:
+        # Import the scraper
+        from adan.wiki_scraper import NewtonWikiScraper, ScraperConfig
+        
+        config = ScraperConfig(
+            max_depth=min(request.max_depth, 3),  # Cap depth at 3
+            max_pages=min(request.max_pages, 50), # Cap pages at 50
+            rate_limit_ms=150
+        )
+        
+        scraper = NewtonWikiScraper(config)
+        stats = await scraper.scrape_chain(request.seed)
+        
+        return {
+            "success": True,
+            "seed": request.seed,
+            "stats": {
+                "pages_scraped": stats.pages_scraped,
+                "facts_extracted": stats.facts_extracted,
+                "facts_new": stats.facts_new,
+                "facts_duplicate": stats.facts_duplicate,
+                "facts_similar": stats.facts_similar,
+                "links_found": stats.links_found,
+                "links_followed": stats.links_followed,
+                "elapsed_seconds": round(stats.elapsed_seconds, 2),
+                "facts_per_second": round(stats.facts_per_second, 2)
+            }
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 @app.get("/health")
 async def health():
     """Health check."""

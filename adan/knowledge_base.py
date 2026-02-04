@@ -49,6 +49,14 @@ try:
 except ImportError:
     HAS_SEMANTIC_RESOLVER = False
 
+# Import Wikipedia facts (auto-scraped)
+try:
+    from .wikipedia_facts import WIKIPEDIA_FACTS
+    HAS_WIKIPEDIA_FACTS = True
+except ImportError:
+    HAS_WIKIPEDIA_FACTS = False
+    WIKIPEDIA_FACTS = {}
+
 
 @dataclass
 class VerifiedFact:
@@ -2044,7 +2052,8 @@ class KnowledgeBase:
             self._query_physics(question_lower) or
             self._query_si_units(question_lower) or
             self._query_historical(question_lower) or
-            self._query_company(question_lower)
+            self._query_company(question_lower) or
+            self._query_wikipedia(question_lower)  # NEW: Wikipedia facts
         )
         
         if result:
@@ -2720,6 +2729,55 @@ class KnowledgeBase:
                     source_url="https://www.bipm.org/en/measurement-units",
                     confidence=1.0,
                 )
+        
+        return None
+    
+    def _query_wikipedia(self, question: str) -> Optional[VerifiedFact]:
+        """
+        Query the Wikipedia facts database (auto-scraped).
+        
+        These facts are scraped from Wikipedia using the Newton Wiki Scraper
+        with diff-based deduplication. They extend the main KB with additional
+        knowledge from Wikipedia's vast corpus.
+        """
+        if not HAS_WIKIPEDIA_FACTS or not WIKIPEDIA_FACTS:
+            return None
+        
+        # Try direct key match first
+        for key, (fact, category, url) in WIKIPEDIA_FACTS.items():
+            key_lower = key.lower()
+            # Exact key match
+            if key_lower in question or question in key_lower:
+                return VerifiedFact(
+                    fact=fact,
+                    category=category,
+                    source="Wikipedia (auto-scraped)",
+                    source_url=url,
+                    confidence=0.85,
+                )
+        
+        # Try keyword matching - find facts with overlapping words
+        question_words = set(question.split())
+        best_match = None
+        best_score = 0
+        
+        for key, (fact, category, url) in WIKIPEDIA_FACTS.items():
+            key_words = set(key.lower().split())
+            # Calculate word overlap
+            overlap = len(question_words & key_words)
+            if overlap >= 2 and overlap > best_score:
+                best_score = overlap
+                best_match = (fact, category, url)
+        
+        if best_match:
+            fact, category, url = best_match
+            return VerifiedFact(
+                fact=fact,
+                category=category,
+                source="Wikipedia (auto-scraped)",
+                source_url=url,
+                confidence=0.75,
+            )
         
         return None
     
