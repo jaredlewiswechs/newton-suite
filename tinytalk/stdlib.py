@@ -32,6 +32,20 @@ def builtin_println(args: List[Value]) -> Value:
     return Value.null_val()
 
 
+def builtin_show(args: List[Value]) -> Value:
+    """
+    Show values - the friendliest way to print.
+    Auto-converts everything, spaces between args, newline at end.
+    
+    show "hello"           -> hello
+    show "x is" 42         -> x is 42  
+    show name "has" count  -> Newton has 42
+    """
+    output = ' '.join(_format_value(a) for a in args)
+    print(output)
+    return Value.null_val()
+
+
 def _format_value(val: Value) -> str:
     """Format a value for printing."""
     if val.type == ValueType.STRING:

@@ -169,8 +169,10 @@ class Runtime:
         from . import stdlib
         
         builtins = {
+            # show is the primary way to print - friendly, auto-converts
+            'show': stdlib.builtin_show,
             'print': stdlib.builtin_print,
-            'println': stdlib.builtin_println,
+            'println': stdlib.builtin_show,  # alias for show
             'len': stdlib.builtin_len,
             'type': stdlib.builtin_type,
             'str': stdlib.builtin_str,
@@ -214,6 +216,7 @@ class Runtime:
             'assert': stdlib.builtin_assert,
             'typeof': stdlib.builtin_typeof,
             'hash': stdlib.builtin_hash,
+            'show': stdlib.builtin_show,
         }
         
         for name, fn in builtins.items():
@@ -523,8 +526,9 @@ class Runtime:
         
         # Arithmetic
         if op == '+':
+            # Auto-coerce to string if EITHER side is string (no str() needed!)
             if left.type == ValueType.STRING or right.type == ValueType.STRING:
-                return Value.string_val(str(left.data) + str(right.data))
+                return Value.string_val(self._to_string(left) + self._to_string(right))
             if left.type == ValueType.LIST and right.type == ValueType.LIST:
                 return Value.list_val(left.data + right.data)
             return self._numeric_op(left, right, lambda a, b: a + b)
@@ -775,15 +779,107 @@ class Runtime:
                 return obj.data[key]
             return Value.null_val()
         
+        # ═══════════════════════════════════════════════════════════════════
+        # PROPERTY CONVERSIONS - No more str() wrapping!
+        # x.str  -> string representation
+        # x.num  -> number (int or float)
+        # x.int  -> integer
+        # x.bool -> boolean
+        # x.type -> type name as string
+        # ═══════════════════════════════════════════════════════════════════
+        
+        if node.field == 'str':
+            return Value.string_val(self._to_string(obj))
+        
+        if node.field == 'num':
+            if obj.type == ValueType.STRING:
+                try:
+                    if '.' in obj.data:
+                        return Value.float_val(float(obj.data))
+                    return Value.int_val(int(obj.data))
+                except:
+                    return Value.int_val(0)
+            if obj.type in (ValueType.INT, ValueType.FLOAT):
+                return obj
+            if obj.type == ValueType.BOOLEAN:
+                return Value.int_val(1 if obj.data else 0)
+            return Value.int_val(0)
+        
+        if node.field == 'int':
+            if obj.type == ValueType.STRING:
+                try:
+                    return Value.int_val(int(float(obj.data)))
+                except:
+                    return Value.int_val(0)
+            if obj.type in (ValueType.INT, ValueType.FLOAT):
+                return Value.int_val(int(obj.data))
+            if obj.type == ValueType.BOOLEAN:
+                return Value.int_val(1 if obj.data else 0)
+            return Value.int_val(0)
+        
+        if node.field == 'float':
+            if obj.type == ValueType.STRING:
+                try:
+                    return Value.float_val(float(obj.data))
+                except:
+                    return Value.float_val(0.0)
+            if obj.type in (ValueType.INT, ValueType.FLOAT):
+                return Value.float_val(float(obj.data))
+            return Value.float_val(0.0)
+        
+        if node.field == 'bool':
+            return Value.bool_val(obj.is_truthy())
+        
+        if node.field == 'type':
+            return Value.string_val(obj.type.value)
+        
+        # .len works on strings, lists, and maps - universal length
+        if node.field == 'len':
+            if obj.type == ValueType.STRING:
+                return Value.int_val(len(obj.data))
+            if obj.type == ValueType.LIST:
+                return Value.int_val(len(obj.data))
+            if obj.type == ValueType.MAP:
+                return Value.int_val(len(obj.data))
+            return Value.int_val(0)
+        
         # Built-in methods
         if obj.type == ValueType.STRING:
             if node.field == 'length':
                 return Value.int_val(len(obj.data))
+            if node.field == 'upper':
+                return Value.string_val(obj.data.upper())
+            if node.field == 'lower':
+                return Value.string_val(obj.data.lower())
+            if node.field == 'trim':
+                return Value.string_val(obj.data.strip())
         if obj.type == ValueType.LIST:
             if node.field == 'length':
                 return Value.int_val(len(obj.data))
+            if node.field == 'first':
+                return obj.data[0] if obj.data else Value.null_val()
+            if node.field == 'last':
+                return obj.data[-1] if obj.data else Value.null_val()
+            if node.field == 'empty':
+                return Value.bool_val(len(obj.data) == 0)
         
-        raise TinyTalkError(f"Cannot access member of {obj.type.value}", node.line)
+        raise TinyTalkError(f"Cannot access '.{node.field}' on {obj.type.value}", node.line)
+    
+    def _to_string(self, val: Value) -> str:
+        """Convert value to string - used for auto-coercion."""
+        if val.type == ValueType.STRING:
+            return val.data
+        if val.type == ValueType.NULL:
+            return "null"
+        if val.type == ValueType.BOOLEAN:
+            return "true" if val.data else "false"
+        if val.type == ValueType.LIST:
+            items = ', '.join(self._to_string(v) for v in val.data)
+            return f"[{items}]"
+        if val.type == ValueType.MAP:
+            pairs = ', '.join(f"{k}: {self._to_string(v)}" for k, v in val.data.items())
+            return f"{{{pairs}}}"
+        return str(val.data)
     
     def _eval_if(self, node: IfStmt, scope: Scope) -> Value:
         """Evaluate if statement."""

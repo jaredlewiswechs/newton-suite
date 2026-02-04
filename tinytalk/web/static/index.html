@@ -514,48 +514,57 @@
             // Register TinyTalk language
             monaco.languages.register({ id: 'tinytalk' });
 
-            // TinyTalk syntax highlighting
+            // TinyTalk syntax highlighting - Smalltalk inspired
             monaco.languages.setMonarchTokensProvider('tinytalk', {
                 keywords: [
-                    'let', 'const', 'fn', 'return', 'if', 'else', 'for', 'while', 'in',
-                    'break', 'continue', 'true', 'false', 'null', 'and', 'or', 'not',
-                    'struct', 'enum', 'import', 'from', 'as', 'match', 'try', 'catch',
-                    'throw', 'async', 'await', 'yield'
+                    // tinyTalk sacred keywords (from the Bible)
+                    'when', 'and', 'fin', 'finfr', 'ratio', 'blueprint', 'law', 'forge',
+                    'field', 'reply', 'end', 'self', 'super', 'nil', 'true', 'false',
+                    // Smalltalk control flow (messages)
+                    'ifTrue', 'ifFalse', 'whileTrue', 'whileFalse', 'timesRepeat',
+                    'do', 'collect', 'select', 'reject', 'inject', 'detect',
+                    // Matter types
+                    'Money', 'Mass', 'Distance', 'Temperature', 'Pressure', 'Velocity', 'Time', 'Volume'
                 ],
                 builtins: [
-                    'print', 'println', 'len', 'type', 'str', 'int', 'float', 'bool',
-                    'range', 'append', 'keys', 'values', 'items', 'sum', 'min', 'max',
-                    'abs', 'sqrt', 'pow', 'sin', 'cos', 'tan', 'floor', 'ceil', 'round',
-                    'filter', 'map', 'reduce', 'sort', 'reverse', 'join', 'split',
-                    'slice', 'contains', 'find', 'replace', 'upper', 'lower', 'trim',
-                    'startswith', 'endswith', 'input', 'assert', 'exit', 'time'
+                    // Smalltalk global objects
+                    'Transcript', 'Array', 'OrderedCollection', 'Dictionary', 'Set',
+                    'String', 'Number', 'Integer', 'Float', 'Boolean', 'Object', 'Block',
+                    // Common messages
+                    'show', 'cr', 'print', 'printNl', 'value', 'new', 'size', 'at', 'put',
+                    'add', 'remove', 'includes', 'isEmpty', 'first', 'last', 'asString',
+                    'asNumber', 'asArray', 'copy', 'yourself', 'class', 'respondsTo'
                 ],
                 operators: [
-                    '=', '>', '<', '!', '==', '<=', '>=', '!=',
-                    '+', '-', '*', '/', '%', '**',
-                    '&&', '||', '|>', '..', '..='
+                    ':=', '=', '==', '~~', '<', '>', '<=', '>=',
+                    '+', '-', '*', '/', '//', '\\\\', '@', ',', ';'
                 ],
-                symbols: /[=><!~?:&|+\-*\/\^%]+/,
+                symbols: /[:=<>~!@#%&*+\-\/\\|,;.]+/,
 
                 tokenizer: {
                     root: [
-                        // Comments
-                        [/\/\/.*$/, 'comment'],
-                        [/\/\*/, 'comment', '@comment'],
+                        // Smalltalk comments in double quotes
+                        [/"/, 'comment', '@comment'],
 
-                        // Strings
-                        [/"([^"\\]|\\.)*$/, 'string.invalid'],
-                        [/"/, 'string', '@string'],
+                        // Strings in single quotes
                         [/'([^'\\]|\\.)*$/, 'string.invalid'],
-                        [/'/, 'string', '@stringSingle'],
+                        [/'/, 'string', '@string'],
+
+                        // Symbols (like #symbol)
+                        [/#[a-zA-Z_]\w*/, 'string.symbol'],
 
                         // Numbers
                         [/\d+\.\d+([eE][\-+]?\d+)?/, 'number.float'],
-                        [/0[xX][0-9a-fA-F]+/, 'number.hex'],
-                        [/0[bB][01]+/, 'number.binary'],
+                        [/\d+r[0-9A-Za-z]+/, 'number.radix'],
                         [/\d+/, 'number'],
 
-                        // Keywords
+                        // Block parameters [:x :y |
+                        [/\[:/, 'delimiter.bracket', '@blockParams'],
+
+                        // Keywords with colons (like ifTrue:ifFalse:)
+                        [/[a-zA-Z_]\w*:/, 'keyword.message'],
+
+                        // Identifiers and keywords
                         [/[a-zA-Z_]\w*/, {
                             cases: {
                                 '@keywords': 'keyword',
@@ -574,25 +583,24 @@
 
                         // Brackets
                         [/[{}()\[\]]/, '@brackets'],
-                        [/[;,.]/, 'delimiter'],
+                        [/[|]/, 'delimiter.temp'],
                     ],
 
                     comment: [
-                        [/[^\/*]+/, 'comment'],
-                        [/\*\//, 'comment', '@pop'],
-                        [/[\/*]/, 'comment']
+                        [/[^"]+/, 'comment'],
+                        [/"/, 'comment', '@pop']
                     ],
 
                     string: [
-                        [/[^\\"]+/, 'string'],
-                        [/\\./, 'string.escape'],
-                        [/"/, 'string', '@pop']
-                    ],
-
-                    stringSingle: [
                         [/[^\\']+/, 'string'],
                         [/\\./, 'string.escape'],
                         [/'/, 'string', '@pop']
+                    ],
+
+                    blockParams: [
+                        [/:[a-zA-Z_]\w*/, 'variable.parameter'],
+                        [/\s+/, 'white'],
+                        [/\|/, 'delimiter.temp', '@pop'],
                     ]
                 }
             });
@@ -603,15 +611,19 @@
                 inherit: true,
                 rules: [
                     { token: 'keyword', foreground: 'ff7b72', fontStyle: 'bold' },
+                    { token: 'keyword.message', foreground: 'ffa657' },  // keyword: selectors
                     { token: 'predefined', foreground: 'd2a8ff' },
                     { token: 'string', foreground: 'a5d6ff' },
                     { token: 'string.escape', foreground: '79c0ff' },
+                    { token: 'string.symbol', foreground: '7ee787' },  // #symbols
                     { token: 'number', foreground: '79c0ff' },
                     { token: 'number.float', foreground: '79c0ff' },
-                    { token: 'number.hex', foreground: '79c0ff' },
+                    { token: 'number.radix', foreground: '79c0ff' },
                     { token: 'comment', foreground: '8b949e', fontStyle: 'italic' },
                     { token: 'operator', foreground: 'ff7b72' },
                     { token: 'identifier', foreground: 'f0f6fc' },
+                    { token: 'variable.parameter', foreground: 'ffa657', fontStyle: 'italic' },  // :blockParams
+                    { token: 'delimiter.temp', foreground: 'ffa657' },  // | for temp vars
                 ],
                 colors: {
                     'editor.background': '#0d1117',
@@ -626,34 +638,41 @@
 
             // Create editor
             editor = monaco.editor.create(document.getElementById('editor'), {
-                value: `// Welcome to TinyTalk!
-// A verified general-purpose programming language
+                value: `// ═══════════════════════════════════════════════════════════
+// Welcome to tinyTalk!
+// The friendliest programming language
+// ═══════════════════════════════════════════════════════════
 
-fn greet(name) {
-    return "Hello, " + name + "!"
-}
+show("Hello World!")
 
-let message = greet("World")
-println(message)
+// Facts with when
+when answer = 42
+when name = "Newton"
 
-// Try some math
-let x = 10
-let y = 20
-println("x + y = " + str(x + y))
+// show() auto-converts everything
+show("The answer is", answer)
+show("Name:", name)
 
-// Fibonacci example
-fn fib(n) {
-    if n <= 1 {
-        return n
-    }
-    return fib(n - 1) + fib(n - 2)
-}
+// Property conversions - no str() needed!
+show("")
+show("answer.str:", answer.str)
+show("answer.type:", answer.type)
 
-println("")
-println("Fibonacci numbers:")
+// String concat with .str
+show("Result: " + name + " says " + answer.str)
+
+// Pure functions with law
+law fib(n)
+    if n <= 1 { reply n }
+    reply fib(n - 1) + fib(n - 2)
+end
+
+show("")
+show("Fibonacci:")
 for i in range(10) {
-    println("fib(" + str(i) + ") = " + str(fib(i)))
-}`,
+    show("fib(" + i.str + ") =", fib(i))
+}
+`,
                 language: 'tinytalk',
                 theme: 'tinytalk-dark',
                 fontFamily: "'JetBrains Mono', Consolas, monospace",
@@ -673,51 +692,85 @@ for i in range(10) {
             // Keyboard shortcut: Ctrl+Enter to run
             editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, runCode);
 
-            // Auto-completion
+            // Auto-completion - Smalltalk style
             monaco.languages.registerCompletionItemProvider('tinytalk', {
                 provideCompletionItems: (model, position) => {
                     const suggestions = [
-                        // Keywords
-                        ...['let', 'const', 'fn', 'return', 'if', 'else', 'for', 'while', 'in', 'true', 'false', 'null', 'and', 'or', 'not'].map(k => ({
+                        // tinyTalk sacred keywords
+                        ...['when', 'and', 'fin', 'finfr', 'ratio', 'blueprint', 'law', 'forge', 'field', 'reply', 'end', 'self', 'super', 'nil', 'true', 'false'].map(k => ({
                             label: k,
                             kind: monaco.languages.CompletionItemKind.Keyword,
                             insertText: k,
                         })),
-                        // Builtins
-                        ...['print', 'println', 'len', 'type', 'str', 'int', 'float', 'bool', 'range', 'append', 'sum', 'min', 'max', 'abs', 'sqrt', 'pow'].map(b => ({
+                        // Global objects
+                        ...['Transcript', 'Array', 'OrderedCollection', 'Dictionary', 'Set', 'String', 'Number', 'Object', 'Block'].map(b => ({
                             label: b,
-                            kind: monaco.languages.CompletionItemKind.Function,
-                            insertText: b + '($0)',
+                            kind: monaco.languages.CompletionItemKind.Class,
+                            insertText: b,
+                        })),
+                        // Common messages
+                        ...['show:', 'cr', 'value:', 'new', 'size', 'at:', 'put:', 'add:', 'includes:', 'ifTrue:', 'ifFalse:', 'whileTrue:', 'timesRepeat:', 'do:', 'collect:', 'select:'].map(m => ({
+                            label: m,
+                            kind: monaco.languages.CompletionItemKind.Method,
+                            insertText: m.endsWith(':') ? m + ' $0' : m,
                             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                         })),
-                        // Snippets
+                        // Snippets - Smalltalk style
                         {
-                            label: 'fn',
+                            label: 'show',
                             kind: monaco.languages.CompletionItemKind.Snippet,
-                            insertText: 'fn ${1:name}(${2:params}) {\n\t$0\n}',
+                            insertText: "Transcript show: '${1:message}'.\nTranscript cr.",
                             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                            documentation: 'Function definition'
+                            documentation: 'Print to Transcript'
                         },
                         {
-                            label: 'for',
+                            label: 'block',
                             kind: monaco.languages.CompletionItemKind.Snippet,
-                            insertText: 'for ${1:i} in ${2:range(10)} {\n\t$0\n}',
+                            insertText: '[:${1:x} | ${2:x * 2}]',
                             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                            documentation: 'For loop'
+                            documentation: 'Block with parameter'
                         },
                         {
-                            label: 'if',
+                            label: 'ifTrueIfFalse',
                             kind: monaco.languages.CompletionItemKind.Snippet,
-                            insertText: 'if ${1:condition} {\n\t$0\n}',
+                            insertText: '${1:condition} ifTrue: [${2:trueBlock}] ifFalse: [${3:falseBlock}]',
                             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                            documentation: 'If statement'
+                            documentation: 'Conditional expression'
                         },
                         {
-                            label: 'while',
+                            label: 'timesRepeat',
                             kind: monaco.languages.CompletionItemKind.Snippet,
-                            insertText: 'while ${1:condition} {\n\t$0\n}',
+                            insertText: '${1:5} timesRepeat: [\n\t$0\n]',
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            documentation: 'Repeat N times'
+                        },
+                        {
+                            label: 'whileTrue',
+                            kind: monaco.languages.CompletionItemKind.Snippet,
+                            insertText: '[${1:condition}] whileTrue: [\n\t$0\n]',
                             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                             documentation: 'While loop'
+                        },
+                        {
+                            label: 'vars',
+                            kind: monaco.languages.CompletionItemKind.Snippet,
+                            insertText: '| ${1:x} ${2:y} |\n${1:x} := ${3:0}.',
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            documentation: 'Declare temporary variables'
+                        },
+                        {
+                            label: 'blueprint',
+                            kind: monaco.languages.CompletionItemKind.Snippet,
+                            insertText: 'blueprint ${1:Name}\n\tfield ${2:value}\n\t\n\tlaw ${3:method}\n\t\treply ${4:self}\n\tend\nend',
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            documentation: 'Class definition (tinyTalk style)'
+                        },
+                        {
+                            label: 'law',
+                            kind: monaco.languages.CompletionItemKind.Snippet,
+                            insertText: 'law ${1:methodName}: ${2:arg}\n\t$0\n\treply self\nend',
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            documentation: 'Method definition (tinyTalk style)'
                         },
                     ];
                     return { suggestions };

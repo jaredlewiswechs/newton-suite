@@ -98,182 +98,218 @@ def run_code():
 
 @app.route('/api/examples')
 def get_examples():
-    """Get example programs."""
+    """Get example programs - using ultra-clean tinyTalk syntax."""
     examples = [
         {
             'name': 'Hello World',
-            'code': 'println("Hello, TinyTalk!")'
+            'code': '''// The cleanest Hello World
+show("Hello World!")
+show("Welcome to tinyTalk!")'''
         },
         {
-            'name': 'Variables',
-            'code': '''let x = 42
-let y = 3.14
-let name = "TinyTalk"
+            'name': '📜 when (Facts)',
+            'code': '''// WHEN - Declares immutable facts
 
-println("x = " + str(x))
-println("y = " + str(y))
-println("name = " + name)'''
+when answer = 42
+when name = "Newton"
+when pi = 3.14159
+
+// show() auto-converts everything!
+show("The answer is", answer)
+show("Name:", name)
+show("Pi:", pi)
+
+// Or use + with .str for concat
+show("Combined: " + name + " says " + answer.str)'''
+        },
+        {
+            'name': '🔧 Property Magic',
+            'code': '''// Property conversions - no function calls!
+// x.str  -> to string
+// x.num  -> to number  
+// x.int  -> to integer
+// x.bool -> to boolean
+// x.type -> type name
+// x.len  -> length
+
+let num = 42
+let text = "3.14"
+let flag = true
+
+show("=== Type Conversions ===")
+show("num.str:", num.str)
+show("text.num:", text.num)
+show("text.int:", text.int)
+show("flag.int:", flag.int)
+show("num.type:", num.type)
+
+show("")
+show("=== String Properties ===")
+let msg = "  hello world  "
+show("original:", msg)
+show("trimmed:", msg.trim)
+show("upper:", msg.upper)
+show("len:", msg.len)
+
+show("")
+show("=== List Properties ===")
+let items = [1, 2, 3, 4, 5]
+show("items:", items)
+show("first:", items.first)
+show("last:", items.last)
+show("len:", items.len)
+show("empty:", items.empty)
+
+show("")
+show("=== String Concat ===")
+show("The number is " + num.str + "!")'''
+        },
+        {
+            'name': '🔨 forge (Actions)',
+            'code': '''// FORGE - Actions that can change state
+
+forge greet(name)
+    show("Hello", name)
+    reply "greeted"
+end
+
+forge countdown(n)
+    while n > 0 {
+        show(n)
+        n = n - 1
+    }
+    show("Liftoff!")
+    reply "done"
+end
+
+greet("World")
+show("")
+countdown(5)'''
+        },
+        {
+            'name': '⚖️ law (Pure Functions)',
+            'code': '''// LAW - Pure functions, no side effects
+
+law square(x)
+    reply x * x
+end
+
+law factorial(n)
+    if n <= 1 { reply 1 }
+    reply n * factorial(n - 1)
+end
+
+law is_even(n)
+    reply n % 2 == 0
+end
+
+show("square(5):", square(5))
+show("factorial(6):", factorial(6))
+show("is_even(4):", is_even(4))
+show("is_even(7):", is_even(7))'''
         },
         {
             'name': 'Fibonacci',
-            'code': '''fn fib(n) {
-    if n <= 1 {
-        return n
-    }
-    return fib(n - 1) + fib(n - 2)
-}
+            'code': '''// Fibonacci - clean and simple
 
-println("Fibonacci sequence:")
-for i in range(15) {
-    println("fib(" + str(i) + ") = " + str(fib(i)))
+law fib(n)
+    if n <= 1 { reply n }
+    reply fib(n - 1) + fib(n - 2)
+end
+
+show("Fibonacci sequence:")
+for i in range(12) {
+    show("fib(" + i.str + ") =", fib(i))
 }'''
         },
         {
             'name': 'FizzBuzz',
-            'code': '''fn fizzbuzz(n) {
-    if n % 15 == 0 {
-        return "FizzBuzz"
-    }
-    if n % 3 == 0 {
-        return "Fizz"
-    }
-    if n % 5 == 0 {
-        return "Buzz"
-    }
-    return str(n)
-}
+            'code': '''// FizzBuzz
 
-println("FizzBuzz 1-20:")
+law fizzbuzz(n)
+    if n % 15 == 0 { reply "FizzBuzz" }
+    if n % 3 == 0 { reply "Fizz" }
+    if n % 5 == 0 { reply "Buzz" }
+    reply n
+end
+
+show("FizzBuzz 1 to 20:")
 for i in range(1, 21) {
-    println(fizzbuzz(i))
+    show(fizzbuzz(i))
 }'''
         },
         {
-            'name': 'Factorial',
-            'code': '''fn factorial(n) {
-    if n <= 1 {
-        return 1
-    }
-    return n * factorial(n - 1)
-}
+            'name': 'Primes',
+            'code': '''// Prime numbers
 
-println("Factorials:")
-for i in range(1, 11) {
-    println(str(i) + "! = " + str(factorial(i)))
-}'''
-        },
-        {
-            'name': 'Prime Numbers',
-            'code': '''fn is_prime(n) {
-    if n < 2 {
-        return false
+law is_prime(n)
+    if n < 2 { reply false }
+    for i in range(2, n) {
+        if n % i == 0 { reply false }
     }
-    let i = 2
-    while i * i <= n {
-        if n % i == 0 {
-            return false
-        }
-        i = i + 1
-    }
-    return true
-}
+    reply true
+end
 
-println("Prime numbers up to 50:")
-for n in range(2, 51) {
+show("Primes up to 30:")
+for n in range(2, 31) {
     if is_prime(n) {
-        println(n)
+        show(n)
     }
 }'''
         },
         {
             'name': 'Collections',
-            'code': '''let numbers = [1, 2, 3, 4, 5]
-let person = {"name": "Alice", "age": 30, "city": "NYC"}
+            'code': '''// Working with collections
 
-println("List: " + str(numbers))
-println("Length: " + str(len(numbers)))
-
-println("")
-println("Map: " + str(person))
-println("Name: " + person["name"])
-println("Age: " + str(person["age"]))'''
-        },
-        {
-            'name': 'Loops',
-            'code': '''// For loop with range
-println("Counting 0-4:")
-for i in range(5) {
-    println("  " + str(i))
-}
-
-// For loop with list
-println("")
-println("Fruits:")
+let numbers = [1, 2, 3, 4, 5]
 let fruits = ["apple", "banana", "cherry"]
+
+show("Numbers:", numbers)
+show("Length:", numbers.len)
+show("First:", numbers.first)
+show("Last:", numbers.last)
+
+show("")
+show("Fruits:")
 for fruit in fruits {
-    println("  " + fruit)
+    show("  -", fruit)
 }
 
-// While loop
-println("")
-println("Powers of 2:")
-let n = 1
-while n < 100 {
-    println("  " + str(n))
-    n = n * 2
-}'''
+// Maps
+let person = {"name": "Newton", "age": 384}
+show("")
+show("Person:", person)'''
         },
         {
-            'name': 'Quick Sort',
-            'code': '''fn quicksort(arr) {
-    if len(arr) <= 1 {
-        return arr
-    }
-    
-    let pivot = arr[0]
-    let rest = slice(arr, 1, len(arr))
-    
-    let less = []
-    let greater = []
-    
-    for x in rest {
-        if x < pivot {
-            append(less, x)
-        } else {
-            append(greater, x)
-        }
-    }
-    
-    return quicksort(less) + [pivot] + quicksort(greater)
-}
+            'name': 'Calculator',
+            'code': '''// Simple calculator
 
-let unsorted = [64, 34, 25, 12, 22, 11, 90, 5, 77, 30]
-println("Unsorted: " + str(unsorted))
+law add(a, b)
+    reply a + b
+end
 
-let sorted = quicksort(unsorted)
-println("Sorted:   " + str(sorted))'''
+law subtract(a, b)
+    reply a - b
+end
+
+law multiply(a, b)
+    reply a * b
+end
+
+law divide(a, b)
+    if b == 0 { reply "error: division by zero" }
+    reply a / b
+end
+
+show("Calculator:")
+show("10 + 5 =", add(10, 5))
+show("10 - 5 =", subtract(10, 5))
+show("10 * 5 =", multiply(10, 5))
+show("10 / 5 =", divide(10, 5))'''
         },
-        {
-            'name': 'Math Functions',
-            'code': '''println("Math in TinyTalk")
-println("================")
-
-println("sqrt(16) = " + str(sqrt(16)))
-println("pow(2, 10) = " + str(pow(2, 10)))
-println("abs(-42) = " + str(abs(-42)))
-println("floor(3.7) = " + str(floor(3.7)))
-println("ceil(3.2) = " + str(ceil(3.2)))
-println("round(3.5) = " + str(round(3.5)))
-
-let nums = [1, 2, 3, 4, 5]
-println("")
-println("List: " + str(nums))
-println("sum = " + str(sum(nums)))
-println("min = " + str(min(nums)))
-println("max = " + str(max(nums)))'''
-        }
     ]
     return jsonify(examples)
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # MAIN

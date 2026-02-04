@@ -3,6 +3,7 @@
 TINYTALK PARSER
 Recursive descent parser producing AST
 
+The Sovereign Stack Language Parser
 Grammar → Tokens → AST
 ═══════════════════════════════════════════════════════════════════════════════
 """
@@ -22,7 +23,20 @@ class NodeType(Enum):
     # Program
     PROGRAM = auto()
     
-    # Statements
+    # ═══════════════════════════════════════════════════════════════
+    # TINYTALK SOVEREIGN CONSTRUCTS
+    # ═══════════════════════════════════════════════════════════════
+    BLUEPRINT = auto()      # Type/class definition
+    LAW = auto()            # Constraint (Layer 0: Governance)
+    FORGE = auto()          # Action method (Layer 1: Executive)
+    FIELD_DECL = auto()     # State declaration
+    WHEN_EXPR = auto()      # Fact declaration
+    FIN_STMT = auto()       # Closure
+    FINFR_STMT = auto()     # Finality (ontological death)
+    REPLY_STMT = auto()     # Return from forge
+    RATIO_EXPR = auto()     # Dimensional analysis
+    
+    # Standard Statements
     LET_STMT = auto()
     CONST_STMT = auto()
     EXPR_STMT = auto()
@@ -329,9 +343,10 @@ class FnDecl(ASTNode):
 
 @dataclass
 class StructDecl(ASTNode):
-    """Struct declaration."""
+    """Struct/Blueprint declaration."""
     name: str = ""
     fields: List[tuple] = field(default_factory=list)  # [(name, type, default), ...]
+    methods: List[tuple] = field(default_factory=list)  # [('forge'/'law', FnDecl), ...]
     is_pub: bool = False
     
     def __post_init__(self):
@@ -512,6 +527,31 @@ class Parser:
         
         if self._match(TokenType.THROW):
             return self._parse_throw()
+        
+        # ═══════════════════════════════════════════════════════════════
+        # TINYTALK SACRED KEYWORDS (from the Bible)
+        # ═══════════════════════════════════════════════════════════════
+        
+        if self._match(TokenType.BLUEPRINT):
+            return self._parse_blueprint()
+        
+        if self._match(TokenType.LAW):
+            return self._parse_law()
+        
+        if self._match(TokenType.FORGE):
+            return self._parse_forge()
+        
+        if self._match(TokenType.WHEN):
+            return self._parse_when()
+        
+        if self._match(TokenType.FIN):
+            return self._parse_fin()
+        
+        if self._match(TokenType.FINFR):
+            return self._parse_finfr()
+        
+        if self._match(TokenType.REPLY):
+            return self._parse_reply()
         
         if self._match(TokenType.LBRACE):
             return self._parse_block()
@@ -820,6 +860,189 @@ class Parser:
         value = self._parse_expression()
         return ThrowStmt(value=value, line=tok.line, column=tok.column)
     
+    # ═══════════════════════════════════════════════════════════════════════════
+    # TINYTALK SACRED PARSERS (from the Bible)
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def _parse_blueprint(self) -> StructDecl:
+        """
+        Parse blueprint (class) declaration.
+        
+        blueprint Counter
+            field count = 0
+            
+            forge increment
+                count = count + 1
+                reply self
+            end
+            
+            law getValue
+                reply count
+            end
+        end
+        """
+        tok = self.tokens[self.pos - 1]
+        name_tok = self._consume(TokenType.IDENTIFIER, "Expected blueprint name")
+        self._skip_newlines()
+        
+        fields = []
+        methods = []
+        
+        # Parse body until 'end'
+        while not self._check(TokenType.END) and not self._at_end():
+            self._skip_newlines()
+            
+            if self._match(TokenType.FIELD):
+                # field name = value
+                field_name = self._consume(TokenType.IDENTIFIER, "Expected field name")
+                value = None
+                if self._match(TokenType.ASSIGN):
+                    value = self._parse_expression()
+                fields.append((field_name.value, None, value))
+            
+            elif self._match(TokenType.FORGE):
+                # forge methodName ... end
+                method = self._parse_forge_body()
+                methods.append(('forge', method))
+            
+            elif self._match(TokenType.LAW):
+                # law methodName ... end
+                method = self._parse_law_body()
+                methods.append(('law', method))
+            
+            self._skip_newlines()
+        
+        self._consume(TokenType.END, "Expected 'end' after blueprint")
+        
+        # Convert to StructDecl with methods attached
+        return StructDecl(name=name_tok.value, fields=fields, methods=methods,
+                          line=tok.line, column=tok.column)
+    
+    def _parse_forge(self) -> FnDecl:
+        """Parse standalone forge (mutable action)."""
+        return self._parse_forge_body()
+    
+    def _parse_forge_body(self) -> FnDecl:
+        """Parse forge method body."""
+        tok = self.tokens[self.pos - 1]
+        name_tok = self._consume(TokenType.IDENTIFIER, "Expected forge name")
+        
+        # Optional parameters
+        params = []
+        if self._match(TokenType.LPAREN):
+            if not self._check(TokenType.RPAREN):
+                params = self._parse_params()
+            self._consume(TokenType.RPAREN, "Expected ')' after parameters")
+        
+        self._skip_newlines()
+        
+        # Parse body until 'end'
+        statements = []
+        while not self._check(TokenType.END) and not self._at_end():
+            stmt = self._parse_statement()
+            if stmt:
+                statements.append(stmt)
+            self._skip_newlines()
+        
+        self._consume(TokenType.END, "Expected 'end' after forge")
+        
+        body = Block(statements=statements, line=tok.line, column=tok.column)
+        return FnDecl(name=name_tok.value, params=params, body=body,
+                      line=tok.line, column=tok.column)
+    
+    def _parse_law(self) -> FnDecl:
+        """Parse standalone law (constraint/pure function)."""
+        return self._parse_law_body()
+    
+    def _parse_law_body(self) -> FnDecl:
+        """Parse law method body (no mutation allowed conceptually)."""
+        tok = self.tokens[self.pos - 1]
+        name_tok = self._consume(TokenType.IDENTIFIER, "Expected law name")
+        
+        # Optional parameters
+        params = []
+        if self._match(TokenType.LPAREN):
+            if not self._check(TokenType.RPAREN):
+                params = self._parse_params()
+            self._consume(TokenType.RPAREN, "Expected ')' after parameters")
+        
+        self._skip_newlines()
+        
+        # Parse body until 'end'
+        statements = []
+        while not self._check(TokenType.END) and not self._at_end():
+            stmt = self._parse_statement()
+            if stmt:
+                statements.append(stmt)
+            self._skip_newlines()
+        
+        self._consume(TokenType.END, "Expected 'end' after law")
+        
+        body = Block(statements=statements, line=tok.line, column=tok.column)
+        return FnDecl(name=name_tok.value, params=params, body=body,
+                      line=tok.line, column=tok.column)
+    
+    def _parse_when(self) -> LetStmt:
+        """
+        Parse when (fact declaration).
+        
+        when x = 42           -> let x = 42 (immutable fact)
+        when name = "Newton"  -> establishes truth
+        """
+        tok = self.tokens[self.pos - 1]
+        name_tok = self._consume(TokenType.IDENTIFIER, "Expected fact name")
+        self._consume(TokenType.ASSIGN, "Expected '=' after fact name")
+        value = self._parse_expression()
+        
+        # when creates an immutable binding (const)
+        return ConstStmt(name=name_tok.value, value=value,
+                         line=tok.line, column=tok.column)
+    
+    def _parse_fin(self) -> ReturnStmt:
+        """
+        Parse fin (closure - can reopen).
+        
+        fin result  -> marks end of scope, returns result
+        """
+        tok = self.tokens[self.pos - 1]
+        
+        value = None
+        if not self._check(TokenType.NEWLINE, TokenType.END, TokenType.EOF):
+            value = self._parse_expression()
+        
+        return ReturnStmt(value=value, line=tok.line, column=tok.column)
+    
+    def _parse_finfr(self) -> ReturnStmt:
+        """
+        Parse finfr (finality - ontological death, cannot reopen).
+        
+        finfr result  -> final return, scope destroyed
+        """
+        tok = self.tokens[self.pos - 1]
+        
+        value = None
+        if not self._check(TokenType.NEWLINE, TokenType.END, TokenType.EOF):
+            value = self._parse_expression()
+        
+        # For now, finfr is the same as fin/return
+        # In a full implementation, it would mark the scope as terminated
+        return ReturnStmt(value=value, line=tok.line, column=tok.column)
+    
+    def _parse_reply(self) -> ReturnStmt:
+        """
+        Parse reply (return from forge/law).
+        
+        reply self    -> return self
+        reply value   -> return value
+        """
+        tok = self.tokens[self.pos - 1]
+        
+        value = None
+        if not self._check(TokenType.NEWLINE, TokenType.END, TokenType.EOF):
+            value = self._parse_expression()
+        
+        return ReturnStmt(value=value, line=tok.line, column=tok.column)
+
     def _parse_expression_statement(self) -> ASTNode:
         """Parse expression or assignment statement."""
         expr = self._parse_expression()
@@ -1057,10 +1280,23 @@ class Parser:
                 expr = Index(obj=expr, index=index, line=tok.line, column=tok.column)
             
             elif self._match(TokenType.DOT):
-                # Member access
+                # Member access - allow type keywords as field names too
+                # e.g., x.str, x.int, x.float, x.bool, x.type
                 tok = self.tokens[self.pos - 1]
-                field_tok = self._consume(TokenType.IDENTIFIER, "Expected field name")
-                expr = Member(obj=expr, field=field_tok.value, 
+                
+                # Accept identifier OR type keywords as field names
+                if self._check(TokenType.IDENTIFIER):
+                    field_tok = self._advance()
+                    field_name = field_tok.value
+                elif self._check(TokenType.STR, TokenType.INT, TokenType.FLOAT, 
+                                  TokenType.BOOL, TokenType.TYPE, TokenType.LIST, 
+                                  TokenType.MAP, TokenType.ANY):
+                    field_tok = self._advance()
+                    field_name = field_tok.value
+                else:
+                    raise SyntaxError(f"Line {tok.line}: Expected field name after '.'")
+                
+                expr = Member(obj=expr, field=field_name, 
                               line=tok.line, column=tok.column)
             
             else:

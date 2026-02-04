@@ -3,7 +3,8 @@
 TINYTALK LEXER
 Tokenizer for the TinyTalk language
 
-Keywords, operators, literals, identifiers
+The Sovereign Stack Language - "No-First" Programming
+Keywords frozen to prevent semantic drift.
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
@@ -25,7 +26,28 @@ class TokenType(Enum):
     # Identifiers
     IDENTIFIER = auto()
     
-    # Keywords
+    # ═══════════════════════════════════════════════════════════════
+    # THE SACRED KEYWORDS (tinyTalk Bible)
+    # ═══════════════════════════════════════════════════════════════
+    
+    # The Five Sacred Words
+    WHEN = auto()           # Declares a fact (presence)
+    AND = auto()            # Combines facts
+    FIN = auto()            # Closure (can reopen)
+    FINFR = auto()          # Finality (ontological death)
+    RATIO = auto()          # Dimensional analysis (f/g)
+    
+    # Layer 0: Governance
+    BLUEPRINT = auto()      # Type definition
+    LAW = auto()            # Constraint definition
+    
+    # Layer 1: Executive  
+    FIELD = auto()          # State declaration
+    FORGE = auto()          # Action that mutates state
+    REPLY = auto()          # Return from forge
+    END = auto()            # Block terminator
+    
+    # General Keywords (compatible mode)
     LET = auto()
     CONST = auto()
     FN = auto()
@@ -56,8 +78,6 @@ class TokenType(Enum):
     TRY = auto()
     CATCH = auto()
     THROW = auto()
-    FIN = auto()
-    FINFR = auto()
     
     # Type keywords
     INT = auto()
@@ -69,6 +89,20 @@ class TokenType(Enum):
     ANY = auto()
     VOID = auto()
     
+    # Matter Types (Units)
+    MONEY = auto()
+    MASS = auto()
+    DISTANCE = auto()
+    TEMPERATURE = auto()
+    PRESSURE = auto()
+    VELOCITY = auto()
+    TIME_UNIT = auto()
+    VOLUME = auto()
+    
+    # Operators - Logical
+    OR = auto()             # or, ||
+    NOT = auto()            # not, !
+    
     # Operators - Arithmetic
     PLUS = auto()           # +
     MINUS = auto()          # -
@@ -77,19 +111,6 @@ class TokenType(Enum):
     PERCENT = auto()        # %
     POWER = auto()          # **
     FLOOR_DIV = auto()      # //
-    
-    # Operators - Comparison
-    EQ = auto()             # ==
-    NE = auto()             # !=
-    LT = auto()             # <
-    GT = auto()             # >
-    LE = auto()             # <=
-    GE = auto()             # >=
-    
-    # Operators - Logical
-    AND = auto()            # and, &&
-    OR = auto()             # or, ||
-    NOT = auto()            # not, !
     
     # Operators - Bitwise
     BIT_AND = auto()        # &
@@ -101,11 +122,20 @@ class TokenType(Enum):
     
     # Operators - Assignment
     ASSIGN = auto()         # =
+    WALRUS = auto()         # := (Smalltalk assignment)
     PLUS_EQ = auto()        # +=
     MINUS_EQ = auto()       # -=
     STAR_EQ = auto()        # *=
     SLASH_EQ = auto()       # /=
     PERCENT_EQ = auto()     # %=
+    
+    # Operators - Comparison
+    EQ = auto()             # ==
+    NE = auto()             # !=, ~~
+    LT = auto()             # <
+    GT = auto()             # >
+    LE = auto()             # <=
+    GE = auto()             # >=
     
     # Delimiters
     LPAREN = auto()         # (
@@ -153,10 +183,32 @@ class Token:
 class Lexer:
     """
     TinyTalk Lexer - Tokenizes source code.
+    
+    The Sovereign Stack Language with frozen lexicon.
     """
     
-    # Keywords mapping
+    # Keywords mapping - THE SACRED WORDS
     KEYWORDS = {
+        # ═══════════════════════════════════════════════════════════
+        # THE FIVE SACRED WORDS (tinyTalk Bible)
+        # ═══════════════════════════════════════════════════════════
+        'when': TokenType.WHEN,         # Declares a fact
+        'and': TokenType.AND,           # Combines facts  
+        'fin': TokenType.FIN,           # Closure (can reopen)
+        'finfr': TokenType.FINFR,       # Finality (ontological death)
+        'ratio': TokenType.RATIO,       # Dimensional analysis
+        
+        # Layer 0: Governance
+        'blueprint': TokenType.BLUEPRINT,
+        'law': TokenType.LAW,
+        
+        # Layer 1: Executive
+        'field': TokenType.FIELD,
+        'forge': TokenType.FORGE,
+        'reply': TokenType.REPLY,
+        'end': TokenType.END,
+        
+        # Compatible keywords (general programming)
         'let': TokenType.LET,
         'const': TokenType.CONST,
         'fn': TokenType.FN,
@@ -187,16 +239,18 @@ class Lexer:
         'try': TokenType.TRY,
         'catch': TokenType.CATCH,
         'throw': TokenType.THROW,
-        'fin': TokenType.FIN,
-        'finfr': TokenType.FINFR,
+        
+        # Boolean/Null literals
         'true': TokenType.BOOLEAN,
         'false': TokenType.BOOLEAN,
         'null': TokenType.NULL,
         'nil': TokenType.NULL,
-        'and': TokenType.AND,
+        
+        # Logical operators as words
         'or': TokenType.OR,
         'not': TokenType.NOT,
-        # Type keywords
+        
+        # Type keywords (also callable as builtins)
         'int': TokenType.INT,
         'float': TokenType.FLOAT,
         'str': TokenType.STR,
@@ -205,12 +259,27 @@ class Lexer:
         'map': TokenType.MAP,
         'any': TokenType.ANY,
         'void': TokenType.VOID,
+        
+        # Matter Types (units)
+        'Money': TokenType.MONEY,
+        'Mass': TokenType.MASS,
+        'Distance': TokenType.DISTANCE,
+        'Temperature': TokenType.TEMPERATURE,
+        'Celsius': TokenType.TEMPERATURE,
+        'Fahrenheit': TokenType.TEMPERATURE,
+        'Pressure': TokenType.PRESSURE,
+        'PSI': TokenType.PRESSURE,
+        'Velocity': TokenType.VELOCITY,
+        'Time': TokenType.TIME_UNIT,
+        'Volume': TokenType.VOLUME,
     }
     
     # Multi-character operators (order matters - longer first)
     OPERATORS = [
         ('**', TokenType.POWER),
         ('//', TokenType.FLOOR_DIV),
+        (':=', TokenType.WALRUS),        # Smalltalk assignment
+        ('~~', TokenType.NE),            # Smalltalk not-equal
         ('==', TokenType.EQ),
         ('!=', TokenType.NE),
         ('<=', TokenType.LE),
