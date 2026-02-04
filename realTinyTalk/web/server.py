@@ -748,15 +748,12 @@ show("apply_twice(squared, 2):" apply_twice(squared, 2))'''
 # ═══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == '__main__':
-    print("""
-╔═══════════════════════════════════════════════════════════════╗
-║                  realTinyTalk Web IDE                         ║
-║                                                               ║
-║  The Verified General-Purpose Programming Language            ║
-║  Every loop bounded. Every operation traced.                  ║
-╚═══════════════════════════════════════════════════════════════╝
-    """)
+    print("\n" + "=" * 60)
+    print("  realTinyTalk Web IDE")
+    print("  The Verified General-Purpose Programming Language")
+    print("  Every loop bounded. Every operation traced.")
+    print("=" * 60 + "\n")
     print("Starting server at http://localhost:5555")
     print("Press Ctrl+C to stop\n")
     
-    app.run(host='0.0.0.0', port=5555, debug=True, use_reloader=False)
+    app.run(host='0.0.0.0', port=5555, debug=False, use_reloader=False, threaded=True)
