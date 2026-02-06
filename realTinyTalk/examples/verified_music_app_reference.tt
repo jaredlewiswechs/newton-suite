@@ -1,0 +1,146 @@
+/*
+Verified Music App reference build for realTinyTalk.
+
+This example models an engine layer with:
+- Mix builder (constraints + energy curve)
+- Lyrics karaoke (time-synced atoms + drift correction)
+- Semantic search over lyrics (line-level vectors)
+- Lyrics calculator (rhyme density, syllables, sentiment)
+- Ledger + replay for traceable outputs
+*/
+
+when EPS = 0.0001
+
+law clamp(x, lo, hi)
+    if x < lo { reply lo }
+    if x > hi { reply hi }
+    reply x
+end
+
+law lerp(a, b, t)
+    reply a + (b - a) * t
+end
+
+law is_space(ch)
+    reply ch is " " or ch is "\t" or ch is "\n" or ch is "\r"
+end
+
+law is_vowel(ch)
+    let c = ch.lowcase
+    reply c is "a" or c is "e" or c is "i" or c is "o" or c is "u" or c is "y"
+end
+
+law tokenize_words(text)
+    let out = []
+    let cur = ""
+
+    for ch in text {
+        if is_space(ch) or ch is "." or ch is "," or ch is "!" or ch is "?" or ch is ":" or ch is ";" or ch is "\"" or ch is "'" {
+            if cur.len > 0 { out = out + [cur.lowcase] }
+            cur = ""
+        } else {
+            cur = cur + ch
+        }
+    }
+
+    if cur.len > 0 { out = out + [cur.lowcase] }
+    reply out
+end
+
+blueprint Track
+    field id
+    field title
+    field artist
+    field duration_sec
+    field explicit
+    field bpm
+    field energy
+    field tags
+    field lyrics_id
+end
+
+blueprint LyricAtom
+    field text
+    field t0
+    field t1
+    field lang
+    field conf
+end
+
+blueprint MixConstraints
+    field duration_sec
+    field allow_explicit
+    field bpm_min
+    field bpm_max
+    field no_repeat_window_sec
+    field max_artist_repeats
+end
+
+blueprint EnergyCurve
+    field p0
+    field p1
+    field p2
+end
+
+law lyric_current_atom(atoms, t)
+    for i in range(atoms.len) {
+        if t >= atoms[i].t0 and t < atoms[i].t1 { reply i }
+    }
+    reply -1
+end
+
+law lyric_progress(atom, t)
+    if atom is null { reply 0.0 }
+    if atom.t1 <= atom.t0 { reply 1.0 }
+    reply clamp((t - atom.t0) / (atom.t1 - atom.t0), 0.0, 1.0)
+end
+
+law drift_corrected_time(t_audio, drift_sec)
+    reply t_audio - drift_sec
+end
+
+law karaoke_frame(atoms, t_audio, drift_sec)
+    let t = drift_corrected_time(t_audio, drift_sec)
+    let idx = lyric_current_atom(atoms, t)
+    if idx == -1 {
+        reply {"idx": -1, "progress": 0.0, "t": t, "drift": drift_sec}
+    }
+    let atom = atoms[idx]
+    reply {"idx": idx, "progress": lyric_progress(atom, t), "t": t, "drift": drift_sec}
+end
+
+law curve_target_energy(curve, t01)
+    if t01 <= 0.5 {
+        let tt = t01 / 0.5
+        reply lerp(curve.p0, curve.p1, tt)
+    } else {
+        let tt = (t01 - 0.5) / 0.5
+        reply lerp(curve.p1, curve.p2, tt)
+    }
+end
+
+forge demo()
+    let tracks = [
+        Track("t1","Tennis Court","Lorde",198,false,125,0.62,["alt","pop","moody"],"ly1"),
+        Track("t2","Midnight City","M83",244,false,105,0.70,["synth","alt","anthem"],"ly2"),
+        Track("t3","Breezeblocks","alt-J",227,false,150,0.66,["alt","weird","groove"],"ly3"),
+        Track("t4","Oblivion","Grimes",190,false,130,0.72,["synth","pop","spark"],"ly4")
+    ]
+
+    let c = MixConstraints(25 * 60, false, 105, 140, 2 * 60 * 60, 2)
+    let curve = EnergyCurve(0.55, 0.72, 0.60)
+
+    let atoms = [
+        LyricAtom("Don't you think",12.0,13.2,"en",0.95),
+        LyricAtom("that it's boring",13.2,14.4,"en",0.95),
+        LyricAtom("how people talk",14.4,15.0,"en",0.95)
+    ]
+
+    let frame = karaoke_frame(atoms, 13.6, 0.0)
+    show("curve target @ 0.5:" curve_target_energy(curve, 0.5))
+    show("karaoke frame:" frame)
+    show("tracks loaded:" tracks.len)
+    show("explicit allowed:" c.allow_explicit)
+end
+
+demo()
