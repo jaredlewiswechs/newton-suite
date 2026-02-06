@@ -385,6 +385,57 @@ end
         failed += 1
     
     # ═══════════════════════════════════════════════════════════════
+    # ADDITIONAL EDGE CASES
+    # ═══════════════════════════════════════════════════════════════
+    print("\n── Additional Edge Cases ──")
+
+    # 1. Syntax error: missing closing bracket
+    if test_transpile("Syntax error: missing bracket", "let x = [1, 2, 3", should_fail=True):
+        passed += 1
+    else:
+        failed += 1
+
+    # 2. Nested function definitions
+    nested_fn_code = '''
+law outer(a)
+    law inner(b)
+        reply b * 2
+    end
+    reply inner(a) + 1
+end
+'''
+    if test_transpile("Nested function definitions", nested_fn_code, ["def outer(a):", "def inner(b):", "return (b * 2)", "return (inner(a) + 1)"]):
+        passed += 1
+    else:
+        failed += 1
+
+    # 3. Deeply chained step operations
+    if test_transpile("Deeply chained steps", "let x = [1,2,3]._sort._reverse._take(2)._sum", ["x = sum(take(reverse(sort([1, 2, 3])), 2))"]):
+        passed += 1
+    else:
+        failed += 1
+
+    # 4. Complex control flow: nested loops/conditionals
+    complex_cf_code = '''
+let total = 0
+for i in range(3) {
+    if i % 2 == 0 {
+        total = total + i
+    }
+}
+'''
+    if test_transpile("Complex control flow", complex_cf_code, ["for i in range(3):", "if ((i % 2) == 0):", "total = (total + i)"]):
+        passed += 1
+    else:
+        failed += 1
+
+    # 5. Unusual property access/operator combinations
+    if test_transpile("Unusual property access", "let s = 'abc'.upcase.len", ['s = len(upcase("abc"))']):
+        passed += 1
+    else:
+        failed += 1
+
+    # ═══════════════════════════════════════════════════════════════
     # SUMMARY
     # ═══════════════════════════════════════════════════════════════
     print()

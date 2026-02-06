@@ -239,6 +239,7 @@ class StepChain(ASTNode):
     """
     source: ASTNode = None  # The data source
     steps: List[tuple] = field(default_factory=list)  # [(step_name, args), ...]
+    dotted: bool = False
     
     def __post_init__(self):
         self.type = NodeType.STEP_CHAIN
@@ -1363,16 +1364,32 @@ class Parser:
                 if self._check(TokenType.IDENTIFIER):
                     field_tok = self._advance()
                     field_name = field_tok.value
+                    expr = Member(obj=expr, field=field_name, 
+                                  line=tok.line, column=tok.column)
                 elif self._check(TokenType.STR, TokenType.INT, TokenType.FLOAT, 
                                   TokenType.BOOL, TokenType.TYPE, TokenType.LIST, 
                                   TokenType.MAP, TokenType.ANY):
                     field_tok = self._advance()
                     field_name = field_tok.value
+                    expr = Member(obj=expr, field=field_name, 
+                                  line=tok.line, column=tok.column)
                 else:
-                    raise SyntaxError(f"Line {tok.line}: Expected field name after '.'")
-                
-                expr = Member(obj=expr, field=field_name, 
-                              line=tok.line, column=tok.column)
+                    # Allow step tokens directly after a dot, e.g. obj._sort._take
+                    if self._is_step_token():
+                        steps = []
+                        while self._is_step_token():
+                            step_tok = self._advance()
+                            step_name = step_tok.value
+                            step_args = []
+                            if self._match(TokenType.LPAREN):
+                                if not self._check(TokenType.RPAREN):
+                                    step_args = self._parse_args()
+                                self._consume(TokenType.RPAREN, f"Expected ')' after {step_name} arguments")
+                            steps.append((step_name, step_args))
+                        expr = StepChain(source=expr, steps=steps, dotted=True,
+                                         line=tok.line, column=tok.column)
+                    else:
+                        raise SyntaxError(f"Line {tok.line}: Expected field name after '.'")
             
             elif self._is_step_token():
                 # Step chain: data _filter _sort _take
