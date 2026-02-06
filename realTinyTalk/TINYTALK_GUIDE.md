@@ -506,6 +506,17 @@ show("Min:" data _min)
 show("Max:" data _max)
 ```
 
+### Dotted Step Chains
+
+In addition to the space-separated pipeline form described above, realTinyTalk supports a "dotted" step-chain syntax that looks like a typical member access sequence. Dotted step chains are written with dots immediately followed by underscore-prefixed step names and are useful when chaining directly after an expression or a property, for example:
+
+```tinytalk
+// Dotted syntax - executed as nested function calls
+show([1,2,3]._sort._reverse._take(2)._sum)  // 5
+```
+
+Semantics: dotted step chains are compiled into nested function-style calls (for example, `sum(take(reverse(sort(obj)), 2))`). Use dotted chains when you prefer that nested-call evaluation order or when flowing steps immediately after a member access (e.g., `obj._sort`). The space-separated style (`data _sort _reverse _take`) remains available and emits readable chain-style expressions in the generated code.
+
 ---
 
 ## 6. Control Flow

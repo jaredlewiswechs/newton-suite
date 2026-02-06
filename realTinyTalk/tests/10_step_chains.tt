@@ -123,3 +123,8 @@ show(join(["a", "b", "c"], ","))
 // EXPECT: HELLO
 show("hello".upcase)
 // END
+
+// TEST: Dotted chain (dot syntax)
+// EXPECT: 5
+show([1, 2, 3]._sort._reverse._take(2)._sum)
+// END

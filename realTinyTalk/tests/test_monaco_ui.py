@@ -163,6 +163,13 @@ TEST_CASES = [
         code='show([5, 2, 8, 1, 9] _sort _reverse _take(3))',
         expected_contains=["9", "8", "5"],
     ),
+
+    TestCase(
+        name="Dotted Step Chain",
+        code='show([1, 2, 3]._sort._reverse._take(2)._sum)',
+        expected_contains=["5"],
+        py_should_contain=['sum(take(reverse(sort([1, 2, 3])), 2))']
+    ),
     
     # ── Arithmetic ──
     TestCase(
