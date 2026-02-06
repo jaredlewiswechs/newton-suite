@@ -1506,12 +1506,15 @@ class Parser:
         # Array literal
         if self._match(TokenType.LBRACKET):
             elements = []
+            self._skip_newlines()
             if not self._check(TokenType.RBRACKET):
                 elements.append(self._parse_expression())
                 while self._match(TokenType.COMMA):
+                    self._skip_newlines()
                     if self._check(TokenType.RBRACKET):
                         break
                     elements.append(self._parse_expression())
+            self._skip_newlines()
             self._consume(TokenType.RBRACKET, "Expected ']' after array elements")
             return Array(elements=elements, line=tok.line, column=tok.column)
         
