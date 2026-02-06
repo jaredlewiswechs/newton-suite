@@ -2827,6 +2827,12 @@ class KnowledgeBase:
         if self._embeddings and self._embeddings_indexed:
             stats["embedding_stats"] = self._embeddings.get_stats()
         
+        # Backwards compatibility: expose legacy short keys expected by older tests
+        stats["keyword_hits"] = stats.get("tier_3_keyword_hits", 0)
+        stats["semantic_hits"] = stats.get("tier_2_semantic_hits", 0)
+        stats["shape_hits"] = stats.get("tier_1_shape_hits", 0)
+        stats["embedding_hits"] = stats.get("tier_4_embedding_hits", 0)
+
         return stats
 
 

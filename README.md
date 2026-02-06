@@ -25,6 +25,13 @@ This suite includes the following Newton projects:
    ```
    Then visit http://localhost:5555
 
+> Development note: The Foghorn shell/server imports the `nina` package. For local testing, install Nina from your GitHub repo:
+>
+> ```bash
+> pip install "git+https://github.com/jaredlewiswechs/Newton-api.git#egg=nina"
+> ```
+> 
+> The Foghorn CI workflow also installs Nina automatically.
 3. Run Newton demos:
    ```bash
    python -m newton_sdk.cli demo

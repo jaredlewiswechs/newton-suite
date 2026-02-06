@@ -24,7 +24,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pytest requests || true
+          # Install Nina from its GitHub repo so Foghorn server imports succeed
+          pip install "git+https://github.com/jaredlewiswechs/Newton-api.git#egg=nina" || true
           if [ -f adan_portable/requirements.txt ]; then pip install -r adan_portable/requirements.txt || true; fi
+
+      - name: Start Foghorn server
+        run: |
+          # Run server in background for API tests
+          python foghorn/shell/server.py &
+          sleep 2
 
       - name: Run tests
         run: pytest -q
