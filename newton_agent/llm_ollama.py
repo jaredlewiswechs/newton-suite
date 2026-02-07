@@ -26,11 +26,12 @@ class OllamaConfig:
     base_url: str = "http://localhost:11434"
     model: str = "llama3"
     temperature: float = 0.7
-    max_tokens: int = 2048
+    max_tokens: int = 4096
     system_prompt: str = (
         "You are Newton Agent, a self-verifying AI assistant created by Ada Computing Company. "
         "You prioritize accuracy over helpfulness. If you're uncertain about something, say so clearly. "
-        "Keep responses concise and factual. Do not provide medical, legal, or financial advice."
+        "When asked for a story, essay, or explanation, provide a long, detailed, and engaging response. "
+        "Do not provide medical, legal, or financial advice."
     )
     timeout: float = 60.0
 

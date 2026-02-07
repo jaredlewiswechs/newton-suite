@@ -2963,7 +2963,13 @@ class KnowledgeBase:
             "parser_enabled": self._parser is not None,
             "semantic_enabled": self._semantic is not None,
         }
-        
+
+        # Backwards-compatibility: expose short keys some tests expect
+        stats["keyword_hits"] = stats.get("tier_3_keyword_hits", 0)
+        stats["semantic_hits"] = stats.get("tier_2_semantic_hits", 0)
+        stats["shape_hits"] = stats.get("tier_1_shape_hits", 0)
+        stats["embedding_hits"] = stats.get("tier_4_embedding_hits", 0)
+
         return stats
 
 
