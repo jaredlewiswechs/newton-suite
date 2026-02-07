@@ -175,6 +175,7 @@ class Runtime:
     def _register_builtins(self):
         """Register built-in functions."""
         from . import stdlib
+        from . import ffi
         
         builtins = {
             # show is the primary way to print - friendly, auto-converts
@@ -231,6 +232,13 @@ class Runtime:
         }
         
         for name, fn in builtins.items():
+            self.global_scope.define(
+                name,
+                Value.function_val(TinyFunction(name, [], None, self.global_scope, True, fn)),
+                const=True
+            )
+
+        for name, fn in ffi.FFI_BUILTINS.items():
             self.global_scope.define(
                 name,
                 Value.function_val(TinyFunction(name, [], None, self.global_scope, True, fn)),
@@ -1160,10 +1168,10 @@ class Runtime:
         
         if node.module.startswith('@'):
             # Built-in module
-            ffi.import_builtin(node.module[1:], scope, node.names)
+            ffi.import_builtin(node.module[1:], scope, node.items)
         else:
             # External module
-            ffi.import_external(node.module, scope, node.names, node.alias)
+            ffi.import_external(node.module, scope, node.items, node.alias)
         
         return Value.null_val()
     
