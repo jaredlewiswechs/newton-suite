@@ -1,0 +1,160 @@
+{
+  "CardEnvelope": {
+    "type": "object",
+    "properties": {
+      "schema_version": { "type": "string" },
+      "kind": { "type": "string" },
+      "author_pubkey": { "type": "string" },
+      "created_at": { "type": "integer" },
+      "payload": { "type": "object" },
+      "refs": { "type": "array", "items": { "type": "string" } },
+      "policy_labels": { "type": "array", "items": { "type": "string" } },
+      "source_refs": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "url": { "type": "string" },
+            "hash": { "type": "string" },
+            "captured_at": { "type": "integer" }
+          },
+          "required": ["url", "hash", "captured_at"]
+        }
+      },
+      "sig": { "type": "string" },
+      "hash": { "type": "string" }
+    },
+    "required": [
+      "schema_version",
+      "kind",
+      "author_pubkey",
+      "created_at",
+      "payload",
+      "sig",
+      "hash"
+    ]
+  },
+  "ProfileCard": {
+    "type": "object",
+    "properties": {
+      "display_name": { "type": "string" },
+      "bio": { "type": "string" },
+      "jurisdictions": { "type": "array", "items": { "type": "string" } },
+      "contact": { "type": "string" },
+      "attestation_refs": { "type": "array", "items": { "type": "string" } }
+    },
+    "required": ["display_name", "jurisdictions"]
+  },
+  "CivicCard": {
+    "type": "object",
+    "properties": {
+      "topic": { "type": "string" },
+      "jurisdiction": { "type": "string" },
+      "geo": { "type": "string" },
+      "time_window": {
+        "type": "object",
+        "properties": {
+          "start": { "type": "integer" },
+          "end": { "type": "integer" }
+        },
+        "required": ["start", "end"]
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "text": { "type": "string" }
+        },
+        "required": ["title", "text"]
+      },
+      "claims": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "kind": { "type": "string" },
+            "statement": { "type": "string" },
+            "evidence_refs": { "type": "array", "items": { "type": "string" } },
+            "confidence": { "type": "number" },
+            "scope": { "type": "string" }
+          },
+          "required": ["kind", "statement"]
+        }
+      }
+    },
+    "required": ["topic", "jurisdiction", "geo", "time_window", "body"]
+  },
+  "FollowCard": {
+    "type": "object",
+    "properties": {
+      "target_type": { "type": "string" },
+      "target_value": { "type": "string" },
+      "filters": { "type": "object" },
+      "priority": { "type": "integer" }
+    },
+    "required": ["target_type", "target_value"]
+  },
+  "LawPackCard": {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string" },
+      "issuer_pubkey": { "type": "string" },
+      "version": { "type": "string" },
+      "rules": { "type": "array", "items": { "type": "string" } },
+      "explain_rules": { "type": "array", "items": { "type": "string" } },
+      "default_weights": { "type": "object" },
+      "requirements": { "type": "object" }
+    },
+    "required": ["name", "issuer_pubkey", "version", "rules"]
+  },
+  "AttestationCard": {
+    "type": "object",
+    "properties": {
+      "issuer_pubkey": { "type": "string" },
+      "subject_pubkey": { "type": "string" },
+      "claim_type": { "type": "string" },
+      "scope": {
+        "type": "object",
+        "properties": {
+          "jurisdictions": { "type": "array", "items": { "type": "string" } },
+          "expires_at": { "type": "integer" }
+        },
+        "required": ["jurisdictions"]
+      },
+      "evidence": { "type": "string" },
+      "revocable": { "type": "boolean" }
+    },
+    "required": ["issuer_pubkey", "subject_pubkey", "claim_type", "scope"]
+  },
+  "ModerationDecisionCard": {
+    "type": "object",
+    "properties": {
+      "issuer_pubkey": { "type": "string" },
+      "target_hash": { "type": "string" },
+      "action": { "type": "string" },
+      "reason_code": { "type": "string" },
+      "notes": { "type": "string" },
+      "evidence_refs": { "type": "array", "items": { "type": "string" } },
+      "scope": { "type": "string" }
+    },
+    "required": ["issuer_pubkey", "target_hash", "action"]
+  },
+  "KeyRotationCard": {
+    "type": "object",
+    "properties": {
+      "old_pubkey": { "type": "string" },
+      "new_pubkey": { "type": "string" },
+      "proof": { "type": "string" }
+    },
+    "required": ["old_pubkey", "new_pubkey", "proof"]
+  },
+  "KeyRevocationCard": {
+    "type": "object",
+    "properties": {
+      "pubkey": { "type": "string" },
+      "reason": { "type": "string" },
+      "effective_at": { "type": "integer" }
+    },
+    "required": ["pubkey", "reason"]
+  }
+}

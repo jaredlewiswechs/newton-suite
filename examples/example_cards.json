@@ -1,0 +1,62 @@
+[
+  {
+    "schema_version": "1.0",
+    "kind": "ProfileCard",
+    "author_pubkey": "pubkey123",
+    "created_at": 1707302400,
+    "payload": {
+      "display_name": "John Doe",
+      "bio": "Community organizer in Katy, TX",
+      "jurisdictions": ["tx.harris.katy"],
+      "contact": "johndoe@example.com",
+      "attestation_refs": []
+    },
+    "refs": [],
+    "policy_labels": ["official"],
+    "source_refs": [],
+    "sig": "signature123",
+    "hash": "hash123"
+  },
+  {
+    "schema_version": "1.0",
+    "kind": "CivicCard",
+    "author_pubkey": "pubkey456",
+    "created_at": 1707302400,
+    "payload": {
+      "topic": "utilities",
+      "jurisdiction": "tx.harris.katy",
+      "geo": "9v1s8",
+      "time_window": {
+        "start": 1707302400,
+        "end": 1707388800
+      },
+      "body": {
+        "title": "Water Outage",
+        "text": "There is a scheduled water outage in the Katy area from 8 AM to 5 PM."
+      },
+      "claims": []
+    },
+    "refs": [],
+    "policy_labels": ["official"],
+    "source_refs": [],
+    "sig": "signature456",
+    "hash": "hash456"
+  },
+  {
+    "schema_version": "1.0",
+    "kind": "FollowCard",
+    "author_pubkey": "pubkey789",
+    "created_at": 1707302400,
+    "payload": {
+      "target_type": "jurisdiction",
+      "target_value": "tx.harris.katy",
+      "filters": {},
+      "priority": 1
+    },
+    "refs": [],
+    "policy_labels": [],
+    "source_refs": [],
+    "sig": "signature789",
+    "hash": "hash789"
+  }
+]

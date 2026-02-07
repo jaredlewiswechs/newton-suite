@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web4 Civic</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            background-color: #333;
+            padding: 0.5rem 0;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        nav a:hover {
+            background-color: #4CAF50;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        main {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #4CAF50;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 0.5rem;
+        }
+
+        .card {
+            background: #f4f4f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+    <script>
+        function openTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+        }
+    </script>
+</head>
+<body>
+    <header>
+        Web4 Civic: Your Local Civic Internet
+    </header>
+    <nav>
+        <a href="#" onclick="openTab('feed')">Feed</a>
+        <a href="#" onclick="openTab('submit')">Submit a Card</a>
+        <a href="#" onclick="openTab('search')">Search and Filter</a>
+        <a href="#" onclick="openTab('trust')">Trust Management</a>
+    </nav>
+    <main>
+        <section id="feed" class="tab-content active">
+            <h2>Feed</h2>
+            {% for item in feed %}
+            <div class="card">
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.text }}</p>
+                <small>Topic: {{ item.topic }} | Jurisdiction: {{ item.jurisdiction }}</small>
+            </div>
+            {% endfor %}
+        </section>
+
+        <section id="submit" class="tab-content">
+            <h2>Submit a Card</h2>
+            <form action="/api/submit" method="POST">
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title" placeholder="Enter the title of your card" required>
+
+                <label for="text">Text:</label>
+                <textarea id="text" name="text" placeholder="Enter the details of your card" required></textarea>
+
+                <label for="topic">Topic:</label>
+                <select id="topic" name="topic">
+                    <option value="utilities">Utilities</option>
+                    <option value="schools">Schools</option>
+                    <option value="public_safety">Public Safety</option>
+                </select>
+
+                <label for="jurisdiction">Jurisdiction:</label>
+                <input type="text" id="jurisdiction" name="jurisdiction" placeholder="e.g., tx.harris.katy" required>
+
+                <button type="submit">Submit</button>
+            </form>
+        </section>
+
+        <section id="search" class="tab-content">
+            <h2>Search and Filter</h2>
+            <form action="/api/feed" method="GET">
+                <label for="search">Search:</label>
+                <input type="text" id="search" name="search" placeholder="Search for cards">
+
+                <label for="topic">Topic:</label>
+                <select id="topic" name="topic">
+                    <option value="">All</option>
+                    <option value="utilities">Utilities</option>
+                    <option value="schools">Schools</option>
+                    <option value="public_safety">Public Safety</option>
+                </select>
+
+                <label for="jurisdiction">Jurisdiction:</label>
+                <input type="text" id="jurisdiction" name="jurisdiction" placeholder="e.g., tx.harris.katy">
+
+                <button type="submit">Search</button>
+            </form>
+        </section>
+
+        <section id="trust" class="tab-content">
+            <h2>Trust Management</h2>
+            <p>Manage your trusted keys and councils below:</p>
+            <form action="/api/trust" method="POST">
+                <label for="key">Add Trusted Key:</label>
+                <input type="text" id="key" name="key" placeholder="Enter a public key" required>
+                <button type="submit">Add</button>
+            </form>
+
+            <h3>Trusted Keys</h3>
+            <ul class="trusted-keys">
+                {% for key in trusted_keys %}
+                <li>{{ key }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </main>
+</body>
+</html>
