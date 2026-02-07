@@ -392,6 +392,11 @@ class Receipt(FoghornObject):
     input_hashes: List[str] = field(default_factory=list)
     output_hashes: List[str] = field(default_factory=list)
     duration_ms: int = 0
+    # Backwards-compatible fields: some code paths pass these
+    prev_hash: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    # Legacy alias - accept if callers pass `operation=` instead of `action=`
+    operation: Optional[str] = None
     
     @property
     def object_type(self) -> ObjectType:

@@ -230,9 +230,9 @@ class NinaHandler(SimpleHTTPRequestHandler):
         
         # TODO: Actually execute query
         result_set = ResultSet(
-            query_id=query.id,
-            items=[],
-            count=0
+            query_hash=query.hash,
+            results=[],
+            total_count=0
         )
         store.add(result_set)
         
@@ -263,11 +263,11 @@ class NinaHandler(SimpleHTTPRequestHandler):
         
         # Create verification receipt
         receipt = Receipt(
-            operation="verify",
-            input_hash=obj.hash,
-            output_hash="",
-            verified=True,
-            execution_time_us=1234
+            action="verify",
+            actor="system",
+            input_hashes=[obj.hash],
+            output_hashes=[],
+            duration_ms=1234
         )
         store.add(receipt)
         self.send_json({"receipt": receipt.to_dict(), "success": True})
