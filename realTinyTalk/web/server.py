@@ -1300,6 +1300,89 @@ end
 show("apply_twice(doubled, 3):" apply_twice(doubled, 3))
 show("apply_twice(squared, 2):" apply_twice(squared, 2))'''
         },
+        {
+            'name': '🏈 Betting Verifier (Parlay + Monte Carlo)',
+            'code': '''// General-purpose betting chance checker
+// Works for football props/parlays, but not tied to any one game.
+
+import "@random"
+
+// American odds -> implied probability
+law implied_prob(odds)
+    if odds < 0 {
+        reply (-1 * odds) / ((-1 * odds) + 100)
+    }
+    reply 100 / (odds + 100)
+end
+
+let legs = [
+    {"name": "Team A moneyline", "odds": -150},
+    {"name": "Player B over", "odds": -110},
+    {"name": "Player C TD", "odds": 200}
+]
+
+let probs = []
+for leg in legs {
+    let p = implied_prob(leg.odds)
+    append(probs, p)
+    show(leg.name + " implied:" (round(p * 10000) / 100).str + "%")
+}
+
+// Deterministic math
+let all_hit = 1.0
+let all_miss = 1.0
+for p in probs {
+    all_hit = all_hit * p
+    all_miss = all_miss * (1 - p)
+}
+let any_hit = 1 - all_miss
+
+show("")
+show("Parlay (all-hit):" (round(all_hit * 100000) / 1000).str + "%")
+show("Any-leg hits:" (round(any_hit * 100000) / 1000).str + "%")
+
+// Weakest leg
+let weakest_name = ""
+let weakest_p = 2.0
+for leg in legs {
+    let p = implied_prob(leg.odds)
+    if p < weakest_p {
+        weakest_p = p
+        weakest_name = leg.name
+    }
+}
+show("Weakest leg:" weakest_name "(" (round(weakest_p * 10000) / 100).str + "%)")
+
+// Monte Carlo simulation
+let sims = 10000
+let sim_all_hit = 0
+let sim_any_hit = 0
+
+for i in range(sims) {
+    let trial_all = true
+    let trial_any = false
+
+    for p in probs {
+        let hit = random.random() < p
+        if hit {
+            trial_any = true
+        } else {
+            trial_all = false
+        }
+    }
+
+    if trial_all {
+        sim_all_hit = sim_all_hit + 1
+    }
+    if trial_any {
+        sim_any_hit = sim_any_hit + 1
+    }
+}
+
+show("")
+show("Monte Carlo parlay:" (round((sim_all_hit / sims) * 100000) / 1000).str + "%")
+show("Monte Carlo any-hit:" (round((sim_any_hit / sims) * 100000) / 1000).str + "%")'''
+        },
     ]
     return jsonify(examples)
 
