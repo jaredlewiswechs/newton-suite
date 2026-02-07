@@ -21,6 +21,7 @@ from datetime import datetime
 from difflib import SequenceMatcher
 import hashlib
 import re
+import realTinyTalk.backends.swift.emitter as swift_emitter
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = os.environ.get('SECRET_KEY', 'devsecret')
@@ -648,6 +649,45 @@ def transpile_to_python():
             'elapsed_ms': round(elapsed, 2)
         })
         
+    except Exception as e:
+        elapsed = (time.time() - start_time) * 1000
+        return jsonify({
+            'success': False,
+            'error': f"{type(e).__name__}: {e}",
+            'elapsed_ms': round(elapsed, 2)
+        })
+
+
+@app.route('/api/transpile/swift', methods=['POST'])
+def transpile_to_swift():
+    """Transpile TinyTalk code to Swift."""
+    data = request.get_json()
+    code = data.get('code', '')
+    include_runtime = data.get('include_runtime', True)
+
+    start_time = time.time()
+
+    try:
+        from realTinyTalk.lexer import Lexer
+        from realTinyTalk.parser import Parser
+
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        ast = parser.parse()
+
+        emitter = swift_emitter.SwiftEmitter(include_runtime=include_runtime)
+        swift_code = emitter.emit(ast)
+
+        elapsed = (time.time() - start_time) * 1000
+
+        return jsonify({
+            'success': True,
+            'code': swift_code,
+            'language': 'swift',
+            'elapsed_ms': round(elapsed, 2)
+        })
+
     except Exception as e:
         elapsed = (time.time() - start_time) * 1000
         return jsonify({

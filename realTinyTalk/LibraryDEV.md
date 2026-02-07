@@ -133,6 +133,7 @@ Python:       nums = sorted([3,1,2])
 **Files:**
 - `realTinyTalk/backends/js/emitter.py` → Translates to JavaScript
 - `realTinyTalk/backends/python/emitter.py` → Translates to Python
+- `realTinyTalk/backends/swift/emitter.py` → Translates to Swift
 
 **Why is this cool?** You can write code ONCE in TinyTalk and run it anywhere!
 
@@ -153,6 +154,8 @@ realTinyTalk/
 │   │   └── emitter.py    # TinyTalk → JavaScript
 │   └── python/
 │       └── emitter.py    # TinyTalk → Python
+│   └── swift/
+│       └── emitter.py    # TinyTalk → Swift
 │
 ├── web/              # The Monaco IDE website
 │   ├── server.py         # Flask web server
