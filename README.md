@@ -19,16 +19,30 @@ This suite includes the following Newton projects:
    pip install -r requirements.txt
    ```
 
-2. Start the realTinyTalk Monaco editor:
+2. If you only want to run the realTinyTalk web IDE locally, ensure Flask is installed:
+   ```bash
+   pip install flask
+   ```
+
+3. Start the realTinyTalk Monaco editor:
    ```bash
    python realTinyTalk/web/server.py
    ```
    Then visit http://localhost:5555
 
-3. Run Newton demos:
+4. Run Newton demos:
    ```bash
    python -m newton_sdk.cli demo
    ```
+
+
+## Recent Updates
+
+- **TinyTalk FFI import wiring fixed**: runtime imports now consume parser `ImportStmt.items`, restoring robust `import "@..."` behavior for built-in and external modules.
+- **FFI builtins now globally registered**: helpers like `eval_python`, `python`, `http_get`, and `http_post` are available in runtime global scope without manual registration.
+- **New Monaco starter example**: `🏈 Betting Verifier (Parlay + Monte Carlo)` was added to the realTinyTalk examples API for local experimentation with implied probability math and random simulation.
+
+For details on web IDE behavior and storage endpoints, see `realTinyTalk/web/README.md`.
 
 ## Architecture
 
